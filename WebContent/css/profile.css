@@ -1,0 +1,28 @@
+@CHARSET "UTF-8";
+
+/* the block that has friends, status and tests on tests-03.jsp */
+div[id="status-top"] div[class*="row"]{
+  border: 0px solid;
+  background: white;
+}
+
+div[id="status-top"] div[class*="col-"]{
+  border: 0px solid;
+  background: white;
+}
+
+/* gives striped effect for completed tests in tests-03.jsp */
+div[id="test-top"] div[class*="even"] div{
+  min-height:20px;
+  border: 0px solid;
+  background: #EEDDEE;
+}
+
+/* removes excess padding and margins from the friends, status, tests section */
+div[id="status-top"],
+div[id="status-top"] div{
+   padding-top: 0 !important;
+   margin-top: 0 !important;
+   padding-bottom: 0 !important;
+   margin-bottom: 0 !important;
+}

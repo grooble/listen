@@ -1,0 +1,117 @@
+@CHARSET "UTF-8";
+body {
+  margin: 0;
+  padding: 0;
+  background: #009900;
+}
+
+/* title on main page */
+#titles{
+  /*
+  */
+  background: #CCFF99;
+  border: 2px solid black;
+  margin-top: 55px;
+  margin-bottom: 20px;
+  border-radius: 15px;
+  behavior: url(css/ie-css3.htc);
+  color: #FF9900;
+}
+
+#maintitle p{
+  text-align: center;
+  font-family: "proxima-nova","Helvetica Neue",Verdana, Geneva, Helvetica,sans-serif;
+  font-size: 100px;
+  text-shadow: #996600 2px 2px 2px;
+  /*color: #FF9900;*/
+  margin-top: 10px;
+  margin-bottom: 60px;
+  /*
+  background: #666600;
+  */
+  }
+
+#subtitle p {
+  margin: 5px;
+  text-align: center;
+  font-family: "カカシクン","墨東ルイカ-01", Verdana, Geneva, Helvetica,sans-serif;
+  font-size: 30px;
+  text-shadow: #996600 1px 1px 1px;
+  margin-bottom: 38px;
+  /*color: #FF9900;*/
+  /*
+  background: #FFCC66;
+  */
+}
+
+/* styling for the left column */
+.colleft {
+  /*background: #009900;*/
+}
+
+#top-con {
+    text-align: left;
+}
+
+.fb-like{
+	margin: 10px 0px 0px 10px;
+}
+
+.loginArea{
+	width: 180px;
+	border-radius: 10px;
+  	font-family: Arial, Sans-Serif;
+    font-size: 13px;
+    background: #CCFF99;
+    border: solid 1px #006600;
+    padding: 10px 10px 20px 10px;     
+    margin: 0px auto 20px auto;
+    color: #003300;
+	float: left;
+    behavior: url(css/ie-css3.htc);
+}
+
+/* for spacing around input areas */
+.loginArea input.text, input.password {
+	width: 150px;
+	margin: 5px 5px 10px 10px;
+    border: solid 1px #339933; 
+    display: block;
+    background:#FFFFFF;
+}
+/*
+*/
+
+.loginArea #submitter {
+	margin-bottom: 20px;
+	text-align: center;
+}
+
+.loginArea #pwdlookup{
+	margin: 10px;
+}
+
+.loginArea label {
+	padding: 5px 10px;
+	float: left;
+}
+/* for spacing between input elements */
+/*
+*/
+.loginArea #passwd, #signin{
+	padding: 10px 0px;
+}
+.fb-login a img{
+    margin-left: 10px;
+}
+
+#helper img {
+	padding: 15px;
+   cursor: pointer;
+}	
+/*
+*/
+/* for mouseover hand on testmenu.jsp */
+#chooser img{
+   cursor: pointer;
+}

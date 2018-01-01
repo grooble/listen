@@ -1,0 +1,65 @@
+@CHARSET "UTF-8";
+
+input {
+  max-width: 100%;
+} 
+
+ul {
+  padding: 0px;
+  margin: 0px;
+  border:none;
+}
+
+li {
+  list-style-type: square;
+  margin-left: 5%;
+  padding-top:10px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #CCCCCC;
+  border:none;
+}
+
+ul > li > ul > li{
+  list-style-type:circle;
+  margin-left: 5%;
+  text-decoration: none !important;
+  border: none;
+}
+
+div.hid {
+	display:none;
+}
+
+/* removes excess padding and margins from divs in user profile section */
+div.profile-top,
+div.profile-top div{
+   padding-top: 0 !important;
+   margin-top: 0 !important;
+   padding-bottom: 0 !important;
+   margin-bottom: 0 !important;
+}
+
+div.profile-top div[class*="row"]:not(.rounded){
+  border: 0px solid;
+  background: white;
+}
+
+div.profile-top div[class*="col-"]:not(.rounded){
+  border: 0px solid;
+  background: white;
+}
+
+.smaller {
+  color: #CCCCCC;
+  font-size: 80%;
+}
+
+.filler {
+	height: 10px;
+}
+
+div.rounded {
+  border: 1px solid #CCCCCC;
+  border-radius: 5px;
+  background: white;
+}

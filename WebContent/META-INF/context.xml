@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context path="/ListenB" docBase="ListenB" debug="5" reloadable="true"
+	crossContext="false">
+
+	<Resource name="jdbc/LDB" auth="Container" type="javax.sql.DataSource"
+		maxActive="100" maxIdle="30" maxWait="10000" username="student"
+		password="gakusei" driverClassName="com.mysql.jdbc.Driver"
+		url="jdbc:mysql://localhost:3306/teacher" />
+
+</Context>

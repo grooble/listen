@@ -1,0 +1,16 @@
+<%@ page language="java" 
+	contentType="text/html; charset=UTF-8" %>
+	
+<form method='POST' enctype='multipart/form-data' action='ProcessUpload.do'>
+  <div class="row text-center">
+    <p>フォトをえらんでください</p>
+    <div class="col-xs-12">
+      <div class="col-xs-8">
+        <input type="file" name="file1">
+      </div>
+      <div class="col-xs-4">
+        <input type="submit" value="Upload">
+      </div>
+    </div>
+  </div>
+</form>

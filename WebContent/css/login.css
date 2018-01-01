@@ -1,0 +1,10 @@
+@CHARSET "UTF-8";
+
+/* for spacing around input areas */
+input.text, input.password{
+    margin: 10px 5px;  
+/*    padding: 10px 0px; */
+    border: solid 1px #85b1de; 
+    display: block;
+    background:#FFFFFF;
+}

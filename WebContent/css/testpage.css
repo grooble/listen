@@ -1,0 +1,35 @@
+@CHARSET "UTF-8";
+
+/* remove shading from rows and columns in testpageR.jsp */
+div[id="sndButtonDiv"] div[class*="row"]:not(.btn-primary){
+  border: 0px solid;
+  background: white;
+}
+
+div[id="sndButtonDiv"] div[class*="col-"]:not(.btn-primary){
+  border: 0px solid;
+  background: white;
+}
+
+div.test-top div[class*="row"]:not(.rounded){
+  border: 0px solid;
+  background: white;
+}
+
+div.test-top div[class*="col-"]:not(.rounded){
+  border: 0px solid;
+  background: white;
+}
+
+.btn-xlarge {
+  padding: 18px 28px;
+  font-size: 22px;
+  line-height: normal;
+  -webkit-border-radius: 8px;
+     -moz-border-radius: 8px;
+          border-radius: 8px;
+}
+
+#test img {
+  cursor: pointer;
+}

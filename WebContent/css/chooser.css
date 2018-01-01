@@ -1,0 +1,21 @@
+@CHARSET "UTF-8";
+
+/* removes the line under each category */
+div#test-list li{
+  padding-top:5px;
+  padding-bottom: 10px;
+  border-bottom: 0px solid;
+}
+
+/* the block that has tests by difficulty and category on testmenu-r.jsp */
+/*
+*/
+div[id="test-list"] div[class*="row"]:not(.rounded){
+  border: 0px solid;
+  background: white;
+}
+
+div[id="test-list"] div[class*="col-"]:not(.rounded){
+  border: 0px solid;
+  background: white;
+}

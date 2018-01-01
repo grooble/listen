@@ -1,0 +1,122 @@
+@CHARSET "UTF-8";
+
+#status_input p {
+	display: block;
+	margin-top: 15px;
+}
+
+textarea {
+	overflow: hidden;
+	color: #cccccc;
+	vertical-align: bottom;
+    font-family: "proxima-nova","Helvetica Neue",Verdana, Geneva, Helvetica,sans-serif;
+    font-size: 80%;
+}
+
+ul {
+  padding: 0px;
+  margin: 0px;
+  list-style:none;
+}
+
+.newsItem {
+  border-bottom: 1px solid #9C9;
+}
+
+.newsWrapper{
+  /*float: left;*/
+}
+
+.clear {
+  clear:both;
+}
+
+#status_input .status-submit{
+	vertical-align: bottom;
+}
+
+/* container for status header */
+.st-title {
+  float: left;
+  padding-left:30px;
+}
+
+.st-text {
+  float: right;
+  padding: 17px;
+}
+
+/* container for st-name and st-date */
+.st-bottom{
+	height:12px;
+}
+.st-name{
+   float: left;
+   text-align: left;
+   display: inline;
+   color: #9999cc;
+   font-size: 10px;
+}
+
+.st-date{
+   float: right;
+   display:inline;
+   color: #ccc;
+   font-size: 10px;
+   text-align: right;
+}
+
+/* not currently used */
+.statusDelete{
+   float: right;
+   color: #ccc;
+   font-size: 10px;
+   text-align: right;
+}
+
+.st-status{
+   height:48px;
+   text-align: left;
+   display:block;
+   color: #9999ff;
+}
+
+#test_display {
+	display: block;
+	color: #99ffff;
+}
+
+#status_news {
+	display: block;
+	padding: 20px 0px 0px 0px;
+}
+
+#status_text_div{
+    font-family: "proxima-nova","Helvetica Neue",Verdana, Geneva, Helvetica,sans-serif;
+    font-size: 80%;
+	height: 15px;
+	margin: 7px 0px 7px 0px;
+}
+
+#showExtra{
+	float: inherit;
+	position: inherit;
+	padding: inherit;
+	overflow: inherit;
+	left: inherit;
+	right: inherit;
+	text-align: inherit;
+}
+
+#findfriend{
+	clear: all;
+    width: 200px;
+    padding: 5px;
+    overflow: hidden;
+}
+
+#findfriend img {
+	float: left;
+	margin-right: 5px;
+}
+#findfriend p{margin-top: 27px;}

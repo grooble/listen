@@ -1,0 +1,44 @@
+@CHARSET "UTF-8";
+
+
+/* TODO style for <div class="message"> element */
+.buttonlook{
+/*    
+	font-weight: bold;
+    */
+	display: inline-block; 
+	outline: 0px;
+    margin: 0 4px 0 0;
+    padding: 0 1em;
+    cursor: pointer; 
+    text-decoration: underline !important; 
+    position: relative;
+    text-align: center; 
+/*    
+    height: 2em;
+    -moz-border-radius: 15px;
+    -webkit-border-radius: 15px
+    */
+}
+
+.nameContainer{
+	display: inline;
+	margin: 20px 10px;
+}
+
+.foundPic{
+	display: inline;
+	margin: 10px 10px 0px 10px;
+}
+
+.nameContainer{
+	display: inline;
+}
+
+.loglist{
+	text-align: left;
+}
+
+.listitem{
+	margin-left:30px;
+}

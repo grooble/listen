@@ -1,0 +1,7 @@
+@CHARSET "UTF-8";
+
+.error{
+  color: #33cc33;
+  font-family: "proxima-nova","Helvetica Neue",Verdana, Geneva, Helvetica,sans-serif;
+  font-size: 48px;
+}

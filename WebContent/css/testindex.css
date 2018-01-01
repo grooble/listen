@@ -1,0 +1,44 @@
+@CHARSET "UTF-8";
+body {
+  margin: 0;
+  padding: 0;
+}
+
+#top-con {
+    text-align: left;
+}
+
+.loginArea{
+	width: 180px;
+	border-radius: 10px;
+  	font-family: Arial, Sans-Serif;
+    font-size: 13px;
+    background: #CCFF99;
+    border: solid 1px #006600;
+    padding: 10px 10px 20px 10px;     
+    margin: 0px auto 20px auto;
+    color: #003300;
+	float: left;
+    behavior: url(css/ie-css3.htc);
+}
+#helper {
+	padding: 15px;
+    cursor: pointer;
+}	
+/*
+*/
+/* for mouseover hand on testmenu.jsp */
+#chooser img{
+   cursor: pointer;
+}
+
+#chooser ul{
+	list-style-type:none;
+}
+
+#selectTestLink, #selectAbout{
+	font-family: Verdana, Arial, "Lucida Console", "Times New Roman";
+	font-size: 1.3em;
+	line-height:100%;
+	padding-top: 15px;
+}
