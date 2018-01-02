@@ -63,16 +63,16 @@ public class Login extends HttpServlet {
         response.setContentType("text/html");
         response.setCharacterEncoding(encoding);
 
-        String userEmail = request.getParameter("email");
-        String pwd = request.getParameter("password");
-        if (userEmail != null){
-            System.out.println("grooble.android.Login...email: " + userEmail);
+        String mail = request.getParameter("email");
+        String password = request.getParameter("password");
+        if (mail != null){
+            System.out.println("grooble.android.Login...email: " + mail);
         }
         else{
             System.out.println("Login->email is null");
         }
-        if (pwd != null){
-            System.out.println("grooble.android.Login...password1: " + pwd);
+        if (password != null){
+            System.out.println("grooble.android.Login...password1: " + password);
         }
         else{
             System.out.println("Login->password is null");
@@ -89,7 +89,7 @@ public class Login extends HttpServlet {
         
         // retrive user
         // TODO it is very unlikely the hash will collide so we won't handle it yet
-        Person user = m.verify(datasource, userEmail).get(0);
+        Person user = m.verify(datasource, mail, password);
         
         // get UserBuilder instance to add friends, results etc.
         UserBuilderT builder = new UserBuilderT(user, datasource);
@@ -97,7 +97,7 @@ public class Login extends HttpServlet {
         // Initialize JSON
         JSONObject JSONContainer = new JSONObject();
         
-        System.out.println("grooble.android.Login->hashed user email: " + user.getEmail());
+        System.out.println("grooble.android.Login->user email: " + user.getEmail());
         // If user is found and login succeeds
         if (user.getEmail() != null){ 
         
@@ -121,7 +121,7 @@ public class Login extends HttpServlet {
             }
             
             // get index for any new test results that are created in the app.
-            newTestId = marker.getTestId(user, pwd);
+            newTestId = marker.getTestId(user, password);
 
             // initialize statusIndex to zero for listing first 20 status items
             Integer statusIndex = new Integer(0);

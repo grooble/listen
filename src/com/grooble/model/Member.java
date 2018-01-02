@@ -95,7 +95,6 @@ public class Member {
         String selectQry = 
             "email_hash " +
             "FROM students WHERE (hashedEmail=?)";
-        Person person = new Person();
         
         try{
             conn = ds.getConnection();
@@ -195,6 +194,7 @@ public class Member {
 		    return null;
 		}
 		else{
+		    // TODO decrypt user
 		    // handle hash collision where more than one result is returned from the DB
 		    if (results.size() > 1){
 		        return deCollide(results, mail, password);
@@ -204,8 +204,72 @@ public class Member {
 		    }		    
 		}
 	}
-	
-	// insert new member into the student database
+
+    // This method is used in to lookup friends to get the id for friending
+    // Returns the id of the user (which is unencrypted).
+    public Person lookup(DataSource ds, String mail){
+        
+        // Create hash of mail for lookup
+        String hashedMail = BCrypt.hashpw(mail, BCrypt.gensalt());
+        
+        List<Person> results = null;
+        
+        ResultSet rs = null;
+        Statement stmt = null;
+        PreparedStatement ps = null;
+//      MySQL クエリー
+        String selectQry = 
+            "SELECT stdid, " +
+            "FROM students WHERE (hashedEmail=?)";
+        Person person = new Person();
+        
+        try{
+            conn = ds.getConnection();
+            stmt = conn.createStatement();
+            stmt.executeUpdate("USE teacher");
+            ps = conn.prepareStatement(selectQry);
+            ps.setString(1, hashedMail);
+            System.out.println("Member-->PreparedStatement(lookup): " + ps.toString());
+            rs = ps.executeQuery();
+            
+            if(!rs.next()){
+                person = null;
+                System.out.println("Member-->PreparedStatement(lookup): member not found");
+            }
+            else {
+                results = new ArrayList<Person>();
+                do {
+                    person.setId(rs.getInt(1));            // not encrypted
+                    results.add(person);
+                } while (rs.next());
+            }
+        } catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            try {if (rs != null) rs.close();} catch (SQLException e) {}
+            try {if (stmt != null) stmt.close();} catch (SQLException e) {}
+            try {if (ps != null) ps.close();} catch (SQLException e ) {}
+            try {if (conn != null) conn.close();} catch (SQLException e) {}
+        }
+        
+        if(null == results){
+            return null;
+        }
+        else{
+            // handle hash collision where more than one result is returned from the DB
+            if (results.size() > 1){
+                //return deCollide(results, mail, password);
+                return results.get(0);
+            }
+            else{
+                return results.get(0);  
+            }           
+        }
+    }
+
+
+    // insert new member into the student database
     public void addMember(DataSource ds, 
 								String mail, String password){
         Statement stmt = null;

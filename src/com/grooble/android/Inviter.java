@@ -2,7 +2,6 @@ package com.grooble.android;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -20,8 +19,6 @@ public class Inviter extends HttpServlet {
 	private static final String TAG = "Inviter: ";
 	
 	private DataSource ds;
-	private Connection con;
-	
 	private Person user; 
 	
 	public void init() throws ServletException {
