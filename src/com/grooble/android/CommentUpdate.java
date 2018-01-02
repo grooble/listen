@@ -58,6 +58,7 @@ public class CommentUpdate extends HttpServlet {
         response.setCharacterEncoding(encoding);
         
         String email = request.getParameter("email");
+        String password = request.getParameter("password");
         String statusComment = request.getParameter("content");
         String statusType = request.getParameter("type");
         String parentString = request.getParameter("parent");
@@ -77,7 +78,7 @@ public class CommentUpdate extends HttpServlet {
         Member memberTools = new Member();
         JSONMaker jMaker = new JSONMaker();
         
-        Person user = (Person) memberTools.lookup(ds, email);
+        Person user = (Person) memberTools.verify(ds, email, password);
         System.out.println(TAG + "-->user: " + user.getFirstName());
         
         // check for empty status and if not empty

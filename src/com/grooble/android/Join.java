@@ -34,8 +34,6 @@ import com.grooble.model.Person;
 public class Join extends HttpServlet{
     private DataSource ds;
     private String encoding;
-    private String secretKeySpec, ivParameterSpec, saltString, password;
-    private byte[] salt;
     private JSONObject JSONUser, JSONContainer;
  
     // get init parameter and initialize datasource
@@ -57,77 +55,50 @@ public class Join extends HttpServlet{
         }
         response.setContentType("text/html");
                 
-        // get email and password
+        // get clear email and password
         String mail = request.getParameter("email").toLowerCase();
-        String pwd = request.getParameter("password");
+        String password = request.getParameter("password");
                 
         //exit if email and password paramaters are found
-        if((mail != null && mail.length()>0) && (pwd != null && pwd.length() > 0)) {
+        if((mail != null && mail.length()>0) && (password != null && password.length() > 0)) {
             
-            //Initialize person to be added
-            Person user = null;
-                        
             //Initialize JSON objects and array
             JSONContainer = new JSONObject();
-            
-            // Initialize encryption and encrypt email
-            EncryptionProtocol encrypter = new EncryptionProtocol();
-            String encryptedMail = encrypter.encrypt(mail, pwd);
-
+                        
             // Check if email belongs to existing member
             Member m = new Member();
-            // TODO implement lookup on hashed email
-
-            if(m.verify(ds, encryptedMail).size() > 0){
-                System.out.println("this email associated with existing acct.: " + mail);
-            } 
+            if(!(null==m.verify(ds, mail, password))){
+                System.out.println("account not added: " + mail);
+                // TODO return message to client
+                try {
+                    JSONContainer.put("error", "email associated with existing account");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
             else {         
-                // Create password hash to add to DB
-                String hashedPwd = BCrypt.hashpw(pwd, BCrypt.gensalt());
-                
-                // Create hash of mail for later lookup
-                String hashedEmail = BCrypt.hashpw(mail, BCrypt.gensalt());
-                
-                // Add new member with pwd hash, email hash and encrypted email
-                System.out.println("Join->hashes::email: " + encryptedMail + "; pwd: " + hashedPwd);
-                m.addMember(ds, encryptedMail, hashedEmail, hashedPwd);
-                //m.addMember(ds, encryptedMail, hashedPwd);
+                // Add new member
+                System.out.println("Join->email: " + mail + "; password: " + password);
+                m.addMember(ds, mail, password);
                 
                 // Check success of Join action. Verify and get current joined user.
-                List<Person> checkResults = m.verify(ds, hashedEmail);
-                switch(checkResults.size()){
-                    // no results returned; the user wasn't added successfully
-                    case 0: System.out.println("grooble.android.Join->user was null");
-                            user = new Person();                
-                            break;
-                            
-                    // Only one user returned. the add was successful
-                    case 1: user = checkResults.get(0);
-                            break;
-                            
-                    // More than one found.
-                    // Check which of the results is the user by decrypting the mail, then return the user
-                    default: 
-                            for(int i = 0; i < checkResults.size(); i++){
-                                Person p = checkResults.get(i);
-                                String cypherMail = p.getEmail();
-                                String clearMail = encrypter.decrypt(cypherMail, pwd);
-                                // found match and return as user
-                                if (clearMail.equals(mail)){
-                                    user = p;
-                                    break;
-                                }
-                            }
-                            break;
+                Person checkedUser = m.verify(ds, mail, password);
+                if (null == checkedUser){
+                    try {
+                        JSONContainer.put("error", "an error ocurred. user not added.");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
-                
-                // ...otherwise, user verified and ready to return
-                // user decrypted in Member
-                JSONUser = user.getJSONObject();
-                try{            
-                    JSONContainer.put("user", JSONUser);
-                }catch (JSONException e){
-                    e.printStackTrace();
+                else{
+                    // ...otherwise, user verified and ready to return
+                    // user decrypted in Member
+                    JSONUser = checkedUser.getJSONObject();
+                    try{            
+                        JSONContainer.put("user", JSONUser);
+                    }catch (JSONException e){
+                        e.printStackTrace();
+                    }                    
                 }
             }
         }

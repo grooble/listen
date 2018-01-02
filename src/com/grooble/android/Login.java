@@ -88,7 +88,8 @@ public class Login extends HttpServlet {
         MarkTest marker = new MarkTest(datasource);
         
         // retrive user
-        Person user = m.verify(datasource, userEmail, pwd);
+        // TODO it is very unlikely the hash will collide so we won't handle it yet
+        Person user = m.verify(datasource, userEmail).get(0);
         
         // get UserBuilder instance to add friends, results etc.
         UserBuilderT builder = new UserBuilderT(user, datasource);
@@ -96,7 +97,7 @@ public class Login extends HttpServlet {
         // Initialize JSON
         JSONObject JSONContainer = new JSONObject();
         
-        System.out.println("grooble.android.Login->hashd user email: " + user.getEmail());
+        System.out.println("grooble.android.Login->hashed user email: " + user.getEmail());
         // If user is found and login succeeds
         if (user.getEmail() != null){ 
         

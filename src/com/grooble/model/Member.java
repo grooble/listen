@@ -7,9 +7,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.sql.DataSource;
+
+import BCrypt.BCrypt;
 
 
 /*
@@ -75,61 +78,58 @@ public class Member {
 		
 		return person;
 	}
+	
 
-	// This method signature collides with the email lookup verify method
-	/*
-	public Person verify(DataSource ds, String fbid){
-		ResultSet rs = null;
-		Statement stmt = null;
-		PreparedStatement ps = null;
-		//MySQL クエリー
-		String selectQry = 
-			"SELECT stdid, firstname, lastname, email, profilepic, points " +
-			"FROM students WHERE (fbid=?)";
-		Person person = new Person();
+    // This method checks for a yes/no existence of an email in the database
+    // no user is returned and hash table collisions not checked
+    public boolean verify(DataSource ds, String mail){
+        
+        // Create hash of mail for lookup
+        String hashedMail = BCrypt.hashpw(mail, BCrypt.gensalt());
+        boolean found = false;
+        
+        ResultSet rs = null;
+        Statement stmt = null;
+        PreparedStatement ps = null;
+//      MySQL クエリー
+        String selectQry = 
+            "email_hash " +
+            "FROM students WHERE (hashedEmail=?)";
+        Person person = new Person();
+        
+        try{
+            conn = ds.getConnection();
+            stmt = conn.createStatement();
+            stmt.executeUpdate("USE teacher");
+            ps = conn.prepareStatement(selectQry);
+            ps.setString(1, hashedMail);
+            System.out.println("Member-->PreparedStatementD: " + ps.toString());
+            rs = ps.executeQuery();
+            
+            if(rs.next()){
+                found = true;
+            }
+        } catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            try {if (rs != null) rs.close();} catch (SQLException e) {}
+            try {if (stmt != null) stmt.close();} catch (SQLException e) {}
+            try {if (ps != null) ps.close();} catch (SQLException e ) {}
+            try {if (conn != null) conn.close();} catch (SQLException e) {}
+        }
+        return found;
+    }
 
-		try{
-			conn = ds.getConnection();
-			stmt = conn.createStatement();
-			stmt.executeUpdate("USE teacher");
-			ps = conn.prepareStatement(selectQry);
-			
-			ps.setString(1, fbid);
-			System.out.println("Member-->PreparedStatementC: " + ps.toString());
-
-			rs = ps.executeQuery();
-
-			if(!rs.next()){
-				person = null;
-			}
-			else {
-				do {
-					person.setId(rs.getInt(1));
-					person.setFirstName(rs.getString(2));
-					person.setLastName(rs.getString(3));
-					person.setEmail(rs.getString(4));
-					person.setProfilePic(rs.getString(5));
-					person.setPoints(rs.getInt(6));
-				} while (rs.next());
-			}
-		} catch(Exception ex){
-			ex.printStackTrace();
-		}
-		finally {
-			try {if (rs != null) rs.close();} catch (SQLException e) {}
-			try {if (stmt != null) stmt.close();} catch (SQLException e) {}
-			try {if (ps != null) ps.close();} catch (SQLException e ) {}
-			try {if (conn != null) conn.close();} catch (SQLException e) {}
-		}		
-		
-		return person;
-	}
-	*/
 	
 	// This method is used in the login lookup
 	// Looks up user on the hashed_email field and may return more than one user
-	public List<Person> verify(DataSource ds, String hashedEmail){
-	    List<Person> results = null;
+	public Person verify(DataSource ds, String mail, String password){
+	    
+        // Create hash of mail for lookup
+        String hashedMail = BCrypt.hashpw(mail, BCrypt.gensalt());
+        
+        List<Person> results = null;
 	    
 		ResultSet rs = null;
 		Statement stmt = null;
@@ -153,7 +153,7 @@ public class Member {
 			stmt = conn.createStatement();
 			stmt.executeUpdate("USE teacher");
 			ps = conn.prepareStatement(selectQry);
-			ps.setString(1, hashedEmail);
+			ps.setString(1, hashedMail);
 			System.out.println("Member-->PreparedStatementD: " + ps.toString());
 			rs = ps.executeQuery();
 			
@@ -190,14 +190,36 @@ public class Member {
 			try {if (ps != null) ps.close();} catch (SQLException e ) {}
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}
-	return results;	
+		
+		if(null == results){
+		    return null;
+		}
+		else{
+		    // handle hash collision where more than one result is returned from the DB
+		    if (results.size() > 1){
+		        return deCollide(results, mail, password);
+		    }
+		    else{
+		        return results.get(0);	
+		    }		    
+		}
 	}
 	
 	// insert new member into the student database
     public void addMember(DataSource ds, 
-								String email, String hashed_email, String password){
+								String mail, String password){
         Statement stmt = null;
 		PreparedStatement ps = null;
+		
+        // Create password hash to add to DB
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+
+        // Encrypt and hash email
+        EncryptionProtocol encrypter = new EncryptionProtocol();
+        String encryptedMail = encrypter.encrypt(mail, password);
+        // Create hash of mail for lookup
+        String hashedMail = BCrypt.hashpw(mail, BCrypt.gensalt());
+
 
 		//			MySQLのインサートクエリー
 		String ins1 = 
@@ -212,9 +234,9 @@ public class Member {
 			ps = conn.prepareStatement(insertQry);
 			
 			// email and password were encrypted in Join.java
-			ps.setString(1, email);
-			ps.setString(2, hashed_email);
-			ps.setString(3, password);
+			ps.setString(1, encryptedMail);
+			ps.setString(2, hashedMail);
+			ps.setString(3, hashedPassword);
 			System.out.println("Member-->PreparedStatementE: " + ps.toString());
 
 			ps.executeUpdate();
@@ -320,7 +342,7 @@ public class Member {
 }
 
 	// TODO fix this with a hashEmail lookup
-	public Person updatePwd(DataSource ds, String email, String pwd){
+	public Person updatePwd(DataSource ds, String email, String password){
 		
 		Statement stmt = null;
 		PreparedStatement ps = null;
@@ -335,7 +357,7 @@ public class Member {
 			stmt.executeUpdate("USE teacher");
 			String insertQry = update;
 			ps = conn.prepareStatement(insertQry);
-			ps.setString(1, pwd);
+			ps.setString(1, password);
 			ps.setString(2, email.toLowerCase());
 			System.out.println("Member-->PreparedStatementH: " + ps.toString());
 
@@ -349,14 +371,7 @@ public class Member {
 			try {if (ps != null) ps.close();} catch (SQLException e ) {}
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}		
-		List<Person> results = this.verify(ds, email);
-		Person p = null;
-		if(results.size() > 1){ // TODO handle multiple result
-            p = results.get(0);
-		}
-		else{
-		    p = results.get(0);
-		}
+		Person p = this.verify(ds, email, password);
 		return p;
 	}
 
@@ -366,7 +381,7 @@ public class Member {
 	/*
 	 *  Edit name and other details
 	 */
-	public Person updateName(DataSource ds, String email, String fname, String lname, Date dob){
+	public Person updateName(DataSource ds, String email, String password, String fname, String lname, Date dob){
 		
 		Statement stmt = null;
 		PreparedStatement ps = null;
@@ -413,14 +428,7 @@ public class Member {
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}		
 
-        List<Person> results = this.verify(ds, email);
-        Person p = null;
-        if(results.size() > 1){ // TODO handle multiple result
-            p = results.get(0);
-        }
-        else{
-            p = results.get(0);
-        }
+		Person p = this.verify(ds, email, password);
         return p;
 	}
 	
@@ -617,10 +625,12 @@ public class Member {
 		}		
 	}
 	
-	public void deleteRecovery(DataSource ds, String email){
+	public void deleteRecovery(DataSource ds, String email, String password){
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		//MySQL クエリー
+		// TODO encrypt pwdrecover table
+		// TODO add hashed email column to pwdrecover table
 		String selectQry = 
 			"DELETE FROM pwdrecover " +
 			"WHERE email=?";
@@ -645,10 +655,10 @@ public class Member {
 		}				
 	}
 	
-	public Person getRecovery(DataSource ds, String code, String confPass){
+	public Person getRecovery(DataSource ds, String code, String confPass, String password){
 		
 		Person p = null;
-		String userMail = "";
+		String email = "";
 		ResultSet rs = null;
 		Statement stmt = null;
 		PreparedStatement ps = null;
@@ -668,11 +678,11 @@ public class Member {
 			rs = ps.executeQuery();
 
 			if(!rs.next()){
-				userMail = "";
+				email = "";
 			}
 			else {
 				do {
-					userMail = rs.getString(1); 
+					email = rs.getString(1); 
 				} while (rs.next());
 			}
 		} catch(Exception ex){
@@ -685,14 +695,7 @@ public class Member {
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}	
         
-		List<Person> results = this.verify(ds, userMail);
-
-        if(results.size() > 1){ // TODO handle multiple result
-            p = results.get(0);
-        }
-        else{
-            p = results.get(0);
-        }
+		p = this.verify(ds, email, password);
         return p;
 	}
 	//----------------------------------------
@@ -728,6 +731,24 @@ public class Member {
             try {if (ps != null) ps.close();} catch (SQLException e ) {}
             try {if (conn != null) conn.close();} catch (SQLException e) {}
         }       
+    }
+    
+    /*
+     * The hashed email lookup in verify may return multiple results.
+     * decrypt and verify email to determine the correct user and return them.
+     */
+    private Person deCollide(List<Person> results, String email, String password){
+        EncryptionProtocol encryptor = new EncryptionProtocol();
+        Person p = new Person();
+        
+        Iterator<Person> it = results.iterator();
+        while (it.hasNext()){
+            p = it.next();
+            String encryptedMail = p.getEmail();
+            String clearMail = encryptor.decrypt(encryptedMail, password);
+            if(clearMail.equals(email)){break;}
+        }
+        return p;
     }
 
 	

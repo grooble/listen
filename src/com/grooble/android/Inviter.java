@@ -55,7 +55,7 @@ public class Inviter extends HttpServlet {
 	   
 	   Member member = new Member();
 	   user = member.verify(ds, userEmail, password);
-	   if(member.isUser(ds, emailToInvite)){
+	   if(member.verify(ds, emailToInvite)){
 
 	       // email to invite is a user
 	       Person personToInvite = member.lookup(ds, emailToInvite);

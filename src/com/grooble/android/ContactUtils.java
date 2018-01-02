@@ -50,6 +50,8 @@ public class ContactUtils extends HttpServlet {
         
         // Get user
         Member member = new Member();
+        
+        // Obtain hash of email to verify user
         user = member.verify(ds, email, password);
         if (user == null){return;}
         
