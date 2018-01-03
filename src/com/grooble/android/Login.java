@@ -92,7 +92,7 @@ public class Login extends HttpServlet {
         Person user = m.verify(datasource, mail, password);
         
         // get UserBuilder instance to add friends, results etc.
-        UserBuilderT builder = new UserBuilderT(user, datasource);
+        UserBuilderT builder = new UserBuilderT(user, password, datasource);
         
         // Initialize JSON
         JSONObject JSONContainer = new JSONObject();

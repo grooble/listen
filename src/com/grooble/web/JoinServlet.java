@@ -49,7 +49,7 @@ public class JoinServlet extends HttpServlet{
 		String mailText = "";
 		
 		Member m = new Member();
-		if(m.isUser(ds, mail)){
+		if(m.verify(ds, mail)){
 			String msg = "This email already in use. /nPlease log in.";
 			request.setAttribute("message", msg);
 			request.setAttribute("messageAlert", "#FFCC66");

@@ -44,8 +44,9 @@ public class LoginServlet extends HttpServlet {
 		String userAcct = request.getParameter("user");
 		String pwd = request.getParameter("pwd");
 		String dispatcherString = "";
-
 		String userType = null;
+		
+		session.setAttribute("password", pwd);
 /*
  * userTypeのフラグがjspで使われている
  * ユーザーが見つけてなかったら、"member not found" に設定する

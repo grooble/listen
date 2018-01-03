@@ -120,11 +120,12 @@ public class FBLogin extends HttpServlet {
 
         //login existing user, or if not found,
         //create a new user.
-        Member check = null;
-        check = new Member();
+        Member check = new Member();
         Person user = null;
         // check for existing user with this fbid
-        user = check.verify(datasource, facebookId);
+        // TODO this login method currently not implemented
+        user = check.verifyFB(datasource, facebookId);
+        
         // if a matching fbid found...
         if(user != null){			
 			userType = "member";

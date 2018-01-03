@@ -55,7 +55,7 @@ public class UserUpdateUtils extends HttpServlet {
         Person user = new Member().verify(ds, email, password);
         if(user != null){            
             //UserBuilder builder = new UserBuilder(user, ds);
-            UserBuilderT builder = new UserBuilderT(user, ds);
+            UserBuilderT builder = new UserBuilderT(user, password, ds);
             
             Person updatedUser = builder.updateName(user, fname, lname);
             

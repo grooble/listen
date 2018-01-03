@@ -20,13 +20,15 @@ public class UserBuilderT {
     private final static String TAG = "UserBuilderT";
     private final static int TEST_SIZE = 5;
     private Person user;
+    private String password;
     private DataSource datasource;
     private Member memberTools;
     private Friender friender;
     private Connection conn;
 
-    public UserBuilderT(Person user, DataSource datasource){
+    public UserBuilderT(Person user, String password, DataSource datasource){
         this.user = user;
+        this.password = password;
         this.datasource = datasource;
         this.memberTools = new Member();
         this.friender = new Friender();
@@ -34,7 +36,7 @@ public class UserBuilderT {
     
     protected Person updateName(Person user, String fname, String lname){
         
-        Person updatedUser = memberTools.updateName(datasource, user.getEmail(), fname, lname, null);
+        Person updatedUser = memberTools.updateName(datasource, user.getEmail(), password, fname, lname, null);
         
         return updatedUser;
     }

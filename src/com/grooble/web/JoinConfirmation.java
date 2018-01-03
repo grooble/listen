@@ -47,7 +47,9 @@ public class JoinConfirmation extends HttpServlet {
 			System.out.println("JoinConfirmation-->confCode: " + confCode);
 			
 			Member m = new Member();
+			// TODO Unconfirmed users info is not yet encrypted
 			signedUser = m.getConfirm(ds, confString, confCode);
+			session.setAttribute("password", signedUser.getPassword());
 			if (signedUser != null){
 				m.addMember(ds, signedUser.getEmail().toLowerCase(), signedUser.getPassword());
 				signedUser = m.lookup(ds, signedUser.getEmail().toLowerCase());

@@ -38,14 +38,16 @@ public class FriendFinder extends HttpServlet {
 		session.removeAttribute("found");
 
 		String emailString = request.getParameter("emailText").toLowerCase();
+		// TODO don't know if the password is passed to this function.
+		String password = request.getParameter("password");
 		System.out.println("FriendFinder->emailText: " + emailString);
 		Member m = new Member();
 		Person user = (Person) session.getAttribute("user");
 		Friender f = new Friender();
 		
 		// does the email belong to an existing user
-		if(m.isUser(datasource, emailString)){
-			Person p = m.lookup(datasource, emailString);
+		if(m.verify(datasource, emailString)){
+			Person p = m.verify(datasource, emailString, password);
 			System.out.println("FriendFinder->isUser: " + p.getFirstName());
 			int toCheckId = p.getId();
 			boolean alreadyFriend = f.isFriend(datasource, toCheckId, user.getId());

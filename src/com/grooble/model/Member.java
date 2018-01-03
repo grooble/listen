@@ -119,6 +119,14 @@ public class Member {
         }
         return found;
     }
+    
+    
+    //TODO implement FB login
+    public Person verifyFB(DataSource ds, String fbid){
+        Person p = new Person();
+        return p;
+    }
+    
 
 	
 	// This method is used in the login lookup
@@ -206,7 +214,7 @@ public class Member {
 	}
 
     // This method is used in to lookup friends to get the id for friending
-    // Returns the id of the user (which is unencrypted).
+    // Returns only the id of the user (which is unencrypted).
     public Person lookup(DataSource ds, String mail){
         
         // Create hash of mail for lookup
@@ -406,23 +414,25 @@ public class Member {
 }
 
 	// TODO fix this with a hashEmail lookup
-	public Person updatePwd(DataSource ds, String email, String password){
+	public Person updatePwd(DataSource ds, String email, String newPassword){
 		
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		
 		//			MySQLのインサートクエリー
-		String update = 
-			"UPDATE students SET password=? WHERE email=?";
-		
+		String update = "UPDATE students SET password=? WHERE email_hash=?";
+	    String pwd1Hash = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+	    String emailHash = BCrypt.hashpw(email, BCrypt.gensalt());
+
+
 		try{
 			conn = ds.getConnection();
 			stmt = conn.createStatement();
 			stmt.executeUpdate("USE teacher");
 			String insertQry = update;
 			ps = conn.prepareStatement(insertQry);
-			ps.setString(1, password);
-			ps.setString(2, email.toLowerCase());
+			ps.setString(1, pwd1Hash);
+			ps.setString(2, emailHash);
 			System.out.println("Member-->PreparedStatementH: " + ps.toString());
 
 			ps.executeUpdate();
@@ -435,7 +445,7 @@ public class Member {
 			try {if (ps != null) ps.close();} catch (SQLException e ) {}
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}		
-		Person p = this.verify(ds, email, password);
+		Person p = this.verify(ds, email, newPassword);
 		return p;
 	}
 
@@ -576,6 +586,7 @@ public class Member {
 		}		
 	}
 	
+	
 	public void deleteConfirm(DataSource ds, String code){
 		Statement stmt = null;
 		PreparedStatement ps = null;
@@ -663,16 +674,19 @@ public class Member {
 		
 		//			MySQLのインサートクエリー
 		String ins1 = 
-			"INSERT INTO pwdrecover(email, code, conf_code)";
+			"INSERT INTO pwdrecover(email_hash, code, conf_code)";
 		String ins2 = "VALUES (?, ?, ?)";
 		
+		// Get hash of the email
+		String emailHash = BCrypt.hashpw(email, BCrypt.gensalt());
+
 		try{
 			conn = ds.getConnection();
 			stmt = conn.createStatement();
 			stmt.executeUpdate("USE teacher");
 			String insertQry = ins1 + ins2;
 			ps = conn.prepareStatement(insertQry);
-			ps.setString(1, email.toLowerCase());
+			ps.setString(1, emailHash);
 			ps.setString(2, code);
 			ps.setString(3, confPass);
 			System.out.println("Member-->PreparedStatementN: " + ps.toString());
@@ -689,7 +703,7 @@ public class Member {
 		}		
 	}
 	
-	public void deleteRecovery(DataSource ds, String email, String password){
+	public void deleteRecovery(DataSource ds, String email){
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		//MySQL クエリー
@@ -697,14 +711,16 @@ public class Member {
 		// TODO add hashed email column to pwdrecover table
 		String selectQry = 
 			"DELETE FROM pwdrecover " +
-			"WHERE email=?";
+			"WHERE email_hash=?";
+
+	    String emailHash = BCrypt.hashpw(email, BCrypt.gensalt());
 
 		try{
 			conn = ds.getConnection();
 			stmt = conn.createStatement();
 			stmt.executeUpdate("USE teacher");
 			ps = conn.prepareStatement(selectQry);
-			ps.setString(1, email.toLowerCase());
+			ps.setString(1, emailHash);
 			System.out.println("Member-->PreparedStatementO: " + ps.toString());
 
 			ps.executeUpdate();
@@ -722,13 +738,13 @@ public class Member {
 	public Person getRecovery(DataSource ds, String code, String confPass, String password){
 		
 		Person p = null;
-		String email = "";
+		String emailHash = "";
 		ResultSet rs = null;
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		//MySQL クエリー
 		String selectQry = 
-			"SELECT email FROM pwdrecover WHERE ((code=?) AND (conf_code=?))";
+			"SELECT email_hash FROM pwdrecover WHERE ((code=?) AND (conf_code=?))";
 
 		try{
 			conn = ds.getConnection();
@@ -742,11 +758,11 @@ public class Member {
 			rs = ps.executeQuery();
 
 			if(!rs.next()){
-				email = "";
+				emailHash = "";
 			}
 			else {
 				do {
-					email = rs.getString(1); 
+					emailHash = rs.getString(1); 
 				} while (rs.next());
 			}
 		} catch(Exception ex){
@@ -759,7 +775,7 @@ public class Member {
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}	
         
-		p = this.verify(ds, email, password);
+		p = this.verifyWithHash(ds, emailHash, password);
         return p;
 	}
 	//----------------------------------------

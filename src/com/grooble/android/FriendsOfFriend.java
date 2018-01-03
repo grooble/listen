@@ -71,7 +71,7 @@ public class FriendsOfFriend extends HttpServlet {
         
         // get list of friend results
         Person friend = member.verify(ds, friendId);
-        List<Result> results = new UserBuilderT(friend, ds).fetchResults();
+        List<Result> results = new UserBuilderT(friend, password, ds).fetchResults();
         
         JSONMaker jm = new JSONMaker();
         

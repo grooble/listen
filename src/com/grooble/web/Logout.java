@@ -23,6 +23,7 @@ public class Logout extends HttpServlet {
 		session.removeAttribute("user");
 		session.removeAttribute("userStatus");
 		session.removeAttribute("message");
+		session.removeAttribute("password");
 		
 		session.invalidate();
 		RequestDispatcher view = request.getRequestDispatcher("/index.html");

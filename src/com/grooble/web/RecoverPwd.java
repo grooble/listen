@@ -18,6 +18,10 @@ import com.grooble.model.TextUtils;
 /**
  * Servlet implementation class RecoverPwd
  */
+
+// TODO update the password recovery process
+// current one no longer works
+
 public class RecoverPwd extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private DataSource datasource;
@@ -39,6 +43,7 @@ public class RecoverPwd extends HttpServlet {
 		String mailText = "";
 		
 		Member member = new Member();
+		// TODO this lookup only returns a person with the user id!
 		Person p = member.lookup(datasource, email);
 		if (p != null){
 			

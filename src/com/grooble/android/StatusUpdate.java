@@ -59,6 +59,7 @@ public class StatusUpdate extends HttpServlet {
         System.out.println(TAG + "-->encoding: " + encoding);
         
         String email = request.getParameter("email");
+        String password = request.getParameter("password");
         String statusComment = request.getParameter("content");
         String statusType = request.getParameter("type");
         String parentString = request.getParameter("parent");
@@ -99,7 +100,7 @@ public class StatusUpdate extends HttpServlet {
         
         Member memberTools = new Member();
         Person user = (Person) memberTools.lookup(ds, email);
-        UserBuilderT builder = new UserBuilderT(user, ds);
+        UserBuilderT builder = new UserBuilderT(user, password, ds);
         System.out.println(TAG + "-->user: " + user.getFirstName());
         
         // check for empty status and if not empty

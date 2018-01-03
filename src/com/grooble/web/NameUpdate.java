@@ -37,6 +37,8 @@ public class NameUpdate extends HttpServlet {
 		response.setContentType("test/html");
 		HttpSession session = request.getSession();
 		
+		String password = (String)session.getAttribute("password");
+		
 		String firstName = request.getParameter("fname");
 		String lastName = request.getParameter("lname");
 		String year = request.getParameter("year");
@@ -65,7 +67,7 @@ public class NameUpdate extends HttpServlet {
 		} 
 		
 		Member m = new Member();
-		p = m.updateName(ds, email, firstName, lastName, sqlDate);
+		p = m.updateName(ds, email, password, firstName, lastName, sqlDate);
 		
 		session.setAttribute("user", p);
 		
