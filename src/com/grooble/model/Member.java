@@ -24,7 +24,7 @@ import BCrypt.BCrypt;
 
 public class Member {
 	private Connection conn;
-		
+	private EncryptionProtocol encryptor = new EncryptionProtocol();
 	
 	public Person verify(DataSource ds, 
 			Integer id){
@@ -202,15 +202,22 @@ public class Member {
 		    return null;
 		}
 		else{
-		    // TODO decrypt user
 		    // handle hash collision where more than one result is returned from the DB
+		    // and decrypt the returned person
 		    if (results.size() > 1){
-		        return deCollide(results, mail, password);
+		        return this.getDecryptedPerson(deCollide(results, mail, password), password);
 		    }
 		    else{
-		        return results.get(0);	
+		        return this.getDecryptedPerson(results.get(0), password);	
 		    }		    
 		}
+	}
+	
+	
+	// TODO create convenience method for use in getRecovery
+	private Person verifyWithHash(DataSource ds, String emailHash){
+	    Person p = new Person();
+	    return p;
 	}
 
     // This method is used in to lookup friends to get the id for friending
@@ -294,8 +301,7 @@ public class Member {
 
 
 		//			MySQLのインサートクエリー
-		String ins1 = 
-			"INSERT INTO students(email, email_hash, password, tutorial) " ;
+		String ins1 = "INSERT INTO students(email, email_hash, password, tutorial) " ;
 		String ins2 = "VALUES (?, ?, ?, 1)";
 		
 		try{
@@ -305,7 +311,6 @@ public class Member {
 			String insertQry = ins1 + ins2;
 			ps = conn.prepareStatement(insertQry);
 			
-			// email and password were encrypted in Join.java
 			ps.setString(1, encryptedMail);
 			ps.setString(2, hashedMail);
 			ps.setString(3, hashedPassword);
@@ -365,7 +370,6 @@ public class Member {
 		}
 		catch(Exception e){e.printStackTrace();}
 		
-		// ******************************************
 		ResultSet rs = null;
 		Statement stmt2 = null;
 		PreparedStatement ps2 = null;
@@ -413,7 +417,11 @@ public class Member {
 		
 }
 
-	// TODO fix this with a hashEmail lookup
+	
+	/*
+	 *  TODO encryption protocol needs to be updated to use surrogate key,
+	 *  locking key and 2nd locking key to facilitate password recovery
+	 */
 	public Person updatePwd(DataSource ds, String email, String newPassword){
 		
 		Statement stmt = null;
@@ -454,9 +462,9 @@ public class Member {
  */
 	/*
 	 *  Edit name and other details
+	 *  TODO implement encryption
 	 */
 	public Person updateName(DataSource ds, String email, String password, String fname, String lname, Date dob){
-		
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		
@@ -549,6 +557,7 @@ public class Member {
 	   }		
 	return tCount;
 	}
+
 	
 	public void setConfirm(DataSource ds, 
 			String email, String password, 
@@ -735,7 +744,7 @@ public class Member {
 		}				
 	}
 	
-	public Person getRecovery(DataSource ds, String code, String confPass, String password){
+	public Person getRecovery(DataSource ds, String code, String confPass){
 		
 		Person p = null;
 		String emailHash = "";
@@ -775,7 +784,7 @@ public class Member {
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}	
         
-		p = this.verifyWithHash(ds, emailHash, password);
+		p = this.verifyWithHash(ds, emailHash);
         return p;
 	}
 	//----------------------------------------
@@ -818,7 +827,6 @@ public class Member {
      * decrypt and verify email to determine the correct user and return them.
      */
     private Person deCollide(List<Person> results, String email, String password){
-        EncryptionProtocol encryptor = new EncryptionProtocol();
         Person p = new Person();
         
         Iterator<Person> it = results.iterator();
@@ -831,5 +839,48 @@ public class Member {
         return p;
     }
 
+    
+    /*
+     *  Convenience method to decrypt the fields of a Person object
+     *  and return a non-encrypted Person
+     */
+    private Person getDecryptedPerson(Person person, String password){
+        
+        // Initialize fields that need to be decrypted
+        String email, firstName, lastName, dob, fbid, fcm, profilePic = null;
+        email = person.getEmail();
+        firstName = person.getFirstName();
+        lastName = person.getLastName();
+        dob = person.getDOB();
+        fbid = person.getFbid();
+        fcm = person.getFcm_token();
+        profilePic = person.getProfilePic();
+        
+        // Decrypt where the field is not null or empty
+        if(!(email == null) && !email.isEmpty()){
+            person.setEmail(encryptor.decrypt(email, password));
+        }
+        if(!(firstName == null) && !firstName.isEmpty()){
+            person.setFirstName(encryptor.decrypt(firstName, password));
+        }
+        if(!(lastName == null) && !lastName.isEmpty()){
+            person.setLastName(encryptor.decrypt(lastName, password));
+        }
+        if(!(dob == null) && !dob.isEmpty()){
+            person.setDOB(encryptor.decrypt(dob, password));
+        }
+        if(!(fbid == null) && !fbid.isEmpty()){
+            person.setDOB(encryptor.decrypt(dob, password));
+        }
+        if(!(fcm == null) && !fcm.isEmpty()){
+            person.setFcm_token(encryptor.decrypt(fcm, password));
+        }
+        if(!(profilePic == null) && !profilePic.isEmpty()){
+            person.setProfilePic(encryptor.decrypt(profilePic, password));
+        }
+
+        // return decrypted person
+        return person;
+    }
 	
 }
