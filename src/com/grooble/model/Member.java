@@ -93,8 +93,8 @@ public class Member {
         PreparedStatement ps = null;
 //      MySQL クエリー
         String selectQry = 
-            "email_hash " +
-            "FROM students WHERE (hashedEmail=?)";
+            "SELECT email_hash " +
+            "FROM students WHERE (email_hash=?)";
         
         try{
             conn = ds.getConnection();
@@ -152,7 +152,7 @@ public class Member {
 			"points, " +
 		    "tutorial, " +
 			"fcm_token " +
-			"FROM students WHERE (hashedEmail=?)";
+			"FROM students WHERE (email_hash=?)";
 		Person person = new Person();
 		
 		try{
@@ -235,7 +235,7 @@ public class Member {
 //      MySQL クエリー
         String selectQry = 
             "SELECT stdid, " +
-            "FROM students WHERE (hashedEmail=?)";
+            "FROM students WHERE (email_hash=?)";
         Person person = new Person();
         
         try{
