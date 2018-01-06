@@ -85,7 +85,7 @@ public class Member {
     public boolean verify(DataSource ds, String mail){
         
         // Create hash of mail for lookup
-        String hashedMail = BCrypt.hashpw(mail, BCrypt.gensalt());
+        String hashedMail = String.valueOf(mail.hashCode());
         boolean found = false;
         
         ResultSet rs = null;
@@ -134,7 +134,7 @@ public class Member {
 	public Person verify(DataSource ds, String mail, String password){
 	    
         // Create hash of mail for lookup
-        String hashedMail = BCrypt.hashpw(mail, BCrypt.gensalt());
+        String hashedMail = String.valueOf(mail.hashCode());
         
         List<Person> results = null;
 	    
@@ -147,7 +147,6 @@ public class Member {
 		    "firstname, " +
 			"lastname, " + 
 		    "email, " + 
-			"password, " +
 		    "profilepic, " +
 			"points, " +
 		    "tutorial, " +
@@ -175,11 +174,11 @@ public class Member {
 					person.setFirstName(rs.getString(2));  // encrypted
 					person.setLastName(rs.getString(3));   // encrypted
 					person.setEmail(rs.getString(4));      // encrypted
-					person.setPassword(rs.getString(5));   // hashed
-					person.setProfilePic(rs.getString(6)); // url encrypted
-					person.setPoints(rs.getInt(7));        // not encrypted
-					person.setTutorial(rs.getBoolean(8));  // not encrypted
-					String fcm_token = rs.getString(9);    // not encrypted
+					person.setPassword(password);   // use password that was passed to method
+					person.setProfilePic(rs.getString(5)); // url encrypted
+					person.setPoints(rs.getInt(6));        // not encrypted
+					person.setTutorial(rs.getBoolean(7));  // not encrypted
+					String fcm_token = rs.getString(8);    // not encrypted
 					// fcm_token may be null if it is a web user rather than android user
 					if(rs.wasNull()){
 					    fcm_token = "";
@@ -225,7 +224,7 @@ public class Member {
     public Person lookup(DataSource ds, String mail){
         
         // Create hash of mail for lookup
-        String hashedMail = BCrypt.hashpw(mail, BCrypt.gensalt());
+        String hashedMail = String.valueOf(mail.hashCode());
         
         List<Person> results = null;
         
@@ -234,7 +233,7 @@ public class Member {
         PreparedStatement ps = null;
 //      MySQL クエリー
         String selectQry = 
-            "SELECT stdid, " +
+            "SELECT stdid " +
             "FROM students WHERE (email_hash=?)";
         Person person = new Person();
         
@@ -297,7 +296,7 @@ public class Member {
         EncryptionProtocol encrypter = new EncryptionProtocol();
         String encryptedMail = encrypter.encrypt(mail, password);
         // Create hash of mail for lookup
-        String hashedMail = BCrypt.hashpw(mail, BCrypt.gensalt());
+        String hashedMail = String.valueOf(mail.hashCode());
 
 
 		//			MySQLのインサートクエリー
@@ -430,7 +429,7 @@ public class Member {
 		//			MySQLのインサートクエリー
 		String update = "UPDATE students SET password=? WHERE email_hash=?";
 	    String pwd1Hash = BCrypt.hashpw(newPassword, BCrypt.gensalt());
-	    String emailHash = BCrypt.hashpw(email, BCrypt.gensalt());
+	    String emailHash = String.valueOf(email.hashCode());
 
 
 		try{
@@ -687,7 +686,7 @@ public class Member {
 		String ins2 = "VALUES (?, ?, ?)";
 		
 		// Get hash of the email
-		String emailHash = BCrypt.hashpw(email, BCrypt.gensalt());
+		String emailHash = String.valueOf(email.hashCode());
 
 		try{
 			conn = ds.getConnection();
@@ -722,7 +721,7 @@ public class Member {
 			"DELETE FROM pwdrecover " +
 			"WHERE email_hash=?";
 
-	    String emailHash = BCrypt.hashpw(email, BCrypt.gensalt());
+	    String emailHash = String.valueOf(email.hashCode());
 
 		try{
 			conn = ds.getConnection();
@@ -872,9 +871,11 @@ public class Member {
         if(!(fbid == null) && !fbid.isEmpty()){
             person.setDOB(encryptor.decrypt(dob, password));
         }
+        /*
         if(!(fcm == null) && !fcm.isEmpty()){
             person.setFcm_token(encryptor.decrypt(fcm, password));
         }
+        */
         if(!(profilePic == null) && !profilePic.isEmpty()){
             person.setProfilePic(encryptor.decrypt(profilePic, password));
         }

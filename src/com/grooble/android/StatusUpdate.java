@@ -70,6 +70,8 @@ public class StatusUpdate extends HttpServlet {
         boolean retrieve = false;
         int parent = 0, start = 0, size =0;
     
+        // Initialize JSONContainer to return JSON to terminal
+        JSONObject JSONContainer = new JSONObject();
         
         // Parse strings into Integers
         if((flagString != null) && (!flagString.isEmpty())){
@@ -100,71 +102,74 @@ public class StatusUpdate extends HttpServlet {
         
         Member memberTools = new Member();
         Person user = (Person) memberTools.lookup(ds, email);
-        UserBuilderT builder = new UserBuilderT(user, password, ds);
-        System.out.println(TAG + "-->user: " + user.getFirstName());
-        
-        // check for empty status and if not empty
-        // create Status and call setStatus in Update.java
-        Update up = new Update();
-        Status status;
-        if ((statusComment != null) && (!statusComment.isEmpty())){
-            if(statusType == null){ // set type to comment
-                status = new Status(user.getId(), "comment", statusComment, parent);
-            }
-            else{ // otherwise include type in the constructor
-                status = new Status(
-                    user.getId(), statusType, statusComment, parent); 
-                    System.out.println("StatusUpdate... Status: " + status.getContent());
-            }
-            up.setStatus(ds, status);
-        }
-
-
-
-        // Initialize JSONContainer to return JSON to terminal
-        JSONObject JSONContainer = new JSONObject();
-        
-        if(retrieve){            
-            // Initialize JSONMaker to create results and status JSON
-            JSONMaker jMaker = new JSONMaker();
-            
-            // Get test Result list and put to JSON
-            List<Result> results = (ArrayList<Result>) builder.fetchResults();
-            
-            // get JSONResult JSONArray if results not null or empty
-            JSONArray JSONResult = null;
-            if ((results==null) || (results.isEmpty())){
-                System.out.println("grooble.android.Login... results empty or null");
-            }
-            else {
-                System.out.println("grooble.android.Login... results not empty");
-                JSONResult = jMaker.getJSONArray(results);
-            }
-            
-            // retrieve a fresh list of 20 most recent status items 
-            // and their comments
-            StatusHandler handler = new StatusHandler();
-            List<Status> statusList = new ArrayList<Status>();
-            List<Status> newStatus = handler.getStatus(ds, user.getId(), start, size);
-            
-            if(newStatus != null){
-                statusList = newStatus;
-            }
-            
-            JSONArray JSONStatus = jMaker.getJSONArray(statusList);
-            // Get JSONObject of user
-            JSONObject userJson = user.getJSONObject();
-            
-            // add user, status and results to JSONContainer
+        if(null == user){
             try {
-                // Add status and user to response JSONObject
-                JSONContainer.put("user", userJson);
-                JSONContainer.put("status", JSONStatus);
-                JSONContainer.put("results", JSONResult);
+                JSONContainer.put("error", "user not found");
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+        }
+        else{
+            UserBuilderT builder = new UserBuilderT(user, password, ds);
+            System.out.println(TAG + "-->user: " + user.getFirstName());
             
+            // check for empty status and if not empty
+            // create Status and call setStatus in Update.java
+            Update up = new Update();
+            Status status;
+            if ((statusComment != null) && (!statusComment.isEmpty())){
+                if(statusType == null){ // set type to comment
+                    status = new Status(user.getId(), "comment", statusComment, parent);
+                }
+                else{ // otherwise include type in the constructor
+                    status = new Status(
+                            user.getId(), statusType, statusComment, parent); 
+                    System.out.println("StatusUpdate... Status: " + status.getContent());
+                }
+                up.setStatus(ds, status);
+            }
+            
+            if(retrieve){            
+                // Initialize JSONMaker to create results and status JSON
+                JSONMaker jMaker = new JSONMaker();
+                
+                // Get test Result list and put to JSON
+                List<Result> results = (ArrayList<Result>) builder.fetchResults();
+                
+                // get JSONResult JSONArray if results not null or empty
+                JSONArray JSONResult = null;
+                if ((results==null) || (results.isEmpty())){
+                    System.out.println("grooble.android.Login... results empty or null");
+                }
+                else {
+                    System.out.println("grooble.android.Login... results not empty");
+                    JSONResult = jMaker.getJSONArray(results);
+                }
+                
+                // retrieve a fresh list of 20 most recent status items 
+                // and their comments
+                StatusHandler handler = new StatusHandler();
+                List<Status> statusList = new ArrayList<Status>();
+                List<Status> newStatus = handler.getStatus(ds, user.getId(), start, size);
+                
+                if(newStatus != null){
+                    statusList = newStatus;
+                }
+                
+                JSONArray JSONStatus = jMaker.getJSONArray(statusList);
+                // Get JSONObject of user
+                JSONObject userJson = user.getJSONObject();
+                
+                // add user, status and results to JSONContainer
+                try {
+                    // Add status and user to response JSONObject
+                    JSONContainer.put("user", userJson);
+                    JSONContainer.put("status", JSONStatus);
+                    JSONContainer.put("results", JSONResult);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }            
         }
 
         // return status list or empty JSONContainer

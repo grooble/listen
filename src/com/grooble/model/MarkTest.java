@@ -252,8 +252,8 @@ public class MarkTest {
         
         PreparedStatement ps1 = null, ps2 = null, ps3 = null;
         String insertQuery = "";
-        String pointsInsertQuery = "UPDATE students SET points = ? WHERE email = ?";
-        String pointsSelectQuery = "SELECT points FROM students WHERE email = ?";
+        String pointsInsertQuery = "UPDATE students SET points = ? WHERE email_hash = ?";
+        String pointsSelectQuery = "SELECT points FROM students WHERE email_hash = ?";
         String maxIdQuery = "SELECT MAX(test_id) FROM tests";
         
         try{
@@ -261,13 +261,17 @@ public class MarkTest {
             stmt = conn.createStatement();
             
             // create and initialize INSERT PreparedStatement
+            // lookup email hash
+            String hashedEmail = String.valueOf(p.getEmail().hashCode());
+
             ps1 = conn.prepareStatement(pointsInsertQuery);
             ps1.setInt(1, score);
-            ps1.setString(2,p.getEmail().toLowerCase());
+            ps1.setString(2,hashedEmail);
             
             // create and initialize SELECT PreparedStatement to get points
+            // lookup email_hash
             ps2 = conn.prepareStatement(pointsSelectQuery);
-            ps2.setString(1, p.getEmail().toLowerCase());
+            ps2.setString(1, hashedEmail);
             
             // create and initialize PreparedStatement to get max test id
             ps3 = conn.prepareStatement(maxIdQuery);
