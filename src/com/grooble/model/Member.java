@@ -25,6 +25,7 @@ import BCrypt.BCrypt;
 public class Member {
 	private Connection conn;
 	private EncryptionProtocol encryptor = new EncryptionProtocol();
+	private static final String TAG = "Member ";
 	
 	public Person verify(DataSource ds, 
 			Integer id){
@@ -80,8 +81,10 @@ public class Member {
 	}
 	
 
-    // This method checks for a yes/no existence of an email in the database
-    // no user is returned and hash table collisions not checked
+	/*
+	 * This method checks for a yes/no existence of an email in the database
+	 * no user is returned and hash table collisions not checked
+	 */
     public boolean verify(DataSource ds, String mail){
         
         // Create hash of mail for lookup
@@ -105,7 +108,7 @@ public class Member {
             System.out.println("Member-->PreparedStatementD: " + ps.toString());
             rs = ps.executeQuery();
             
-            if(rs.next()){
+            if(rs.isBeforeFirst()){
                 found = true;
             }
         } catch(Exception ex){
@@ -117,6 +120,7 @@ public class Member {
             try {if (ps != null) ps.close();} catch (SQLException e ) {}
             try {if (conn != null) conn.close();} catch (SQLException e) {}
         }
+        System.out.println(TAG + "verify->found: " + found);
         return found;
     }
     
@@ -160,12 +164,12 @@ public class Member {
 			stmt.executeUpdate("USE teacher");
 			ps = conn.prepareStatement(selectQry);
 			ps.setString(1, hashedMail);
-			System.out.println("Member-->PreparedStatementD: " + ps.toString());
+			System.out.println(TAG + "verify->PStmt: " + ps.toString());
 			rs = ps.executeQuery();
 			
 			if(!rs.next()){
 				person = null;
-				System.out.println("Member-->PreparedStatementD: member not found");
+				System.out.println(TAG + "verify->PStmt: member not found");
 			}
 			else {
 			    results = new ArrayList<Person>();
@@ -197,19 +201,25 @@ public class Member {
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}
 		
+		Person personToReturn = null;
+
 		if(null == results){
-		    return null;
+		    personToReturn = null;
 		}
 		else{
 		    // handle hash collision where more than one result is returned from the DB
 		    // and decrypt the returned person
 		    if (results.size() > 1){
-		        return this.getDecryptedPerson(deCollide(results, mail, password), password);
+		        personToReturn = this.getDecryptedPerson(deCollide(results, mail, password), password);
 		    }
 		    else{
-		        return this.getDecryptedPerson(results.get(0), password);	
-		    }		    
+		        personToReturn = this.getDecryptedPerson(results.get(0), password);	
+		    }
 		}
+		System.out.println(TAG + "verify->person->email, points: " + personToReturn.getEmail() + ", " + 
+		                   personToReturn.getPoints());
+		
+		return personToReturn;
 	}
 	
 	
@@ -791,13 +801,16 @@ public class Member {
 	/*
      *  Update tutorial to show or not show on startup
      */
-    public void updateTutorial(DataSource ds, String email, String password, int tut){
+    public boolean updateTutorial(DataSource ds, String email, String password, int tut){
         
         Statement stmt = null;
         PreparedStatement ps = null;
+        boolean updated = false;
+        
+        String hashedEmail = String.valueOf(email.hashCode());
         
         String update = 
-                "UPDATE students SET tutorial=? WHERE email=?";
+                "UPDATE students SET tutorial=? WHERE email_hash=?";
         
         try{
             conn = ds.getConnection();
@@ -806,10 +819,13 @@ public class Member {
             String insertQry = update;
             ps = conn.prepareStatement(insertQry);
             ps.setInt(1, tut);
-            ps.setString(2, email);
+            ps.setString(2, hashedEmail);
             System.out.println("Member-->Updating tut status..." + ps.toString());
 
-            ps.executeUpdate();
+            int rowCount = ps.executeUpdate();
+            if(rowCount > 0){
+                updated = true;
+            }
         }
         catch(Exception ex){
             ex.printStackTrace();
@@ -818,7 +834,8 @@ public class Member {
             try {if (stmt != null) stmt.close();} catch (SQLException e) {}
             try {if (ps != null) ps.close();} catch (SQLException e ) {}
             try {if (conn != null) conn.close();} catch (SQLException e) {}
-        }       
+        }
+        return updated;
     }
     
     /*

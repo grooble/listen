@@ -32,6 +32,7 @@ import com.grooble.model.Person;
 
 @SuppressWarnings("serial")
 public class Join extends HttpServlet{
+    private static final String TAG = "Join ";
     private DataSource ds;
     private String encoding;
     private JSONObject JSONUser, JSONContainer;
@@ -58,8 +59,10 @@ public class Join extends HttpServlet{
         // get clear email and password
         String mail = request.getParameter("email").toLowerCase();
         String password = request.getParameter("password");
+        
+        System.out.println(TAG + "email: " + mail + ", pwd: " + password);
                 
-        //exit if email and password paramaters are found
+        //exit if email and password paramaters are not found
         if((mail != null && mail.length()>0) && (password != null && password.length() > 0)) {
             
             //Initialize JSON objects and array
@@ -67,9 +70,7 @@ public class Join extends HttpServlet{
                         
             // Check if email belongs to existing member
             Member m = new Member();
-            if(!(null==m.verify(ds, mail, password))){
-                System.out.println("account not added: " + mail);
-                // TODO return message to client
+            if(m.verify(ds, mail)){ // true means an existing user has this email so cannot create account
                 try {
                     JSONContainer.put("error", "email associated with existing account");
                 } catch (JSONException e) {
@@ -78,7 +79,7 @@ public class Join extends HttpServlet{
             }
             else {         
                 // Add new member
-                System.out.println("Join->email: " + mail + "; password: " + password);
+                System.out.println(TAG + "adding member: email: " + mail + "; password: " + password);
                 m.addMember(ds, mail, password);
                 
                 // Check success of Join action. Verify and get current joined user.
@@ -93,6 +94,7 @@ public class Join extends HttpServlet{
                 else{
                     // ...otherwise, user verified and ready to return
                     // user decrypted in Member
+                    System.out.println(TAG + "checkedUser: "+ checkedUser.getEmail());
                     JSONUser = checkedUser.getJSONObject();
                     try{            
                         JSONContainer.put("user", JSONUser);

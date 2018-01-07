@@ -94,6 +94,7 @@ public class ProcessTest2 extends HttpServlet {
         
         // get user
         Person user = new Member().verify(ds, email, password);
+        System.out.println(TAG + "user_email,points: " + user.getEmail() + ", " + user.getPoints());
         
         // convert parameter strings to int arrays
         int[] answersArray = null;
@@ -118,30 +119,8 @@ public class ProcessTest2 extends HttpServlet {
             parameterError = true;
         }
         
-        // Create test and add correct and answers 
-        // take int[] questions and make ArrayList<Question[]> to add to test
-        // all fields except questionId are null
-        Test test = new Test();
-        List<Question[]> testQuestions = new ArrayList<Question[]>();
-        Question[] questionBlock = new Question[QUESTION_SIZE];
-        for (int i = 0; i < questionsArray.length;){
-            Question q = new Question();
-            q.setQuestionId(questionsArray[i]);
-            //System.out.println("ProcessTest: Qn[" + i + "]...");
-            questionBlock[i%QUESTION_SIZE] = q;
-            i++;
-            if(i%QUESTION_SIZE==0){
-                testQuestions.add(questionBlock);
-                questionBlock = new Question[QUESTION_SIZE];
-                //System.out.println(TAG + "new questionBlock: " + i/QUESTION_SIZE);
-            }
-        }
-
-        //System.out.println(TAG + " testQuestions.size(): " + testQuestions.size());
-        // Set questions, correct and answered to test
-        test.setTest(testQuestions);
-        test.setCorrect(correctArray);
-        test.setSelected(answersArray);
+        // Create test object from the questions and results
+        Test test = buildTest(questionsArray, answersArray, correctArray);
         
         // Add the completed user test to the 'tests' table
         // and get the next newTestId to be sent back to the app.
@@ -169,6 +148,12 @@ public class ProcessTest2 extends HttpServlet {
 
     }
     
+    
+    /*
+     * The test results come as a String from the request.
+     * This is a convenience method to process the string into an int[]
+     * for later processing of test results.
+     */
     private int[] makeArray(String input){
         //System.out.println(TAG + ": makeArray()...string input to makeArray: " + input);
         StringBuilder is = new StringBuilder(input);
@@ -184,10 +169,38 @@ public class ProcessTest2 extends HttpServlet {
                 answers[i] = -1;
             }
         }
-        for(int j = 0; j < answers.length-1; j++){
-            System.out.print(answers[j] + ", ");
-        }
+
         return answers;
+    }
+    
+
+ /*
+ * Create test and add correct and answers
+ * take int[] questions and make ArrayList<Question[]> to add to test
+ * all fields except questionId are null
+ */
+    private Test buildTest(int[] questionsArray, int[] answersArray, int[] correctArray){
+        Test test = new Test();
+        List<Question[]> testQuestions = new ArrayList<Question[]>();
+        Question[] questionBlock = new Question[QUESTION_SIZE];
+        for (int i = 0; i < questionsArray.length;){
+            Question q = new Question();
+            q.setQuestionId(questionsArray[i]);
+            //System.out.println("ProcessTest: Qn[" + i + "]...");
+            questionBlock[i%QUESTION_SIZE] = q;
+            i++;
+            if(i%QUESTION_SIZE==0){
+                testQuestions.add(questionBlock);
+                questionBlock = new Question[QUESTION_SIZE];
+            }
+        }
+
+        // Set questions, correct and answered to test
+        test.setTest(testQuestions);
+        test.setCorrect(correctArray);
+        test.setSelected(answersArray);
+        
+        return test;
     }
 
 }

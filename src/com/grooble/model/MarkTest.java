@@ -116,9 +116,11 @@ public class MarkTest {
 		
 		PreparedStatement ps1 = null, ps2 = null, ps3 = null;
 		String insertQuery = "";
-		String pointsInsertQuery = "UPDATE students SET points = ? WHERE email = ?";
-		String pointsSelectQuery = "SELECT points FROM students WHERE email = ?";
+		String pointsInsertQuery = "UPDATE students SET points = ? WHERE email_hash = ?";
+		String pointsSelectQuery = "SELECT points FROM students WHERE email_hash = ?";
 		String deleteQuery = "DELETE FROM tests WHERE test_id = ?";
+		
+		String emailHash = String.valueOf(p.getEmail().hashCode());
 		
 		try{
 			conn = ds.getConnection();
@@ -127,11 +129,11 @@ public class MarkTest {
 			// create and initialize INSERT PreparedStatement
 			ps1 = conn.prepareStatement(pointsInsertQuery);
 			ps1.setInt(1, score);
-			ps1.setString(2,p.getEmail().toLowerCase());
+			ps1.setString(2,emailHash);
 			
 			// create and initialize SELECT PreparedStatement to get points
 			ps2 = conn.prepareStatement(pointsSelectQuery);
-			ps2.setString(1, p.getEmail().toLowerCase());
+			ps2.setString(1, emailHash);
 			
 			// create and initialize PreparedStatement for DELETE query for reserved 
 			ps3 = conn.prepareStatement(deleteQuery);
@@ -143,10 +145,6 @@ public class MarkTest {
             
 			stmt.executeUpdate("USE teacher");
 
-			// DELETE the reserved test_id
-			// real test with the same id will be added next 
-			int deleteFlag = ps3.executeUpdate();
-			
 			// テストの問題を一個ずつうインサートクエリーでデータベースに入れる。
 			for (int i = 0; i < testQuestions.size(); i++){
 				Question[] qnArr = testQuestions.get(i);
@@ -248,7 +246,7 @@ public class MarkTest {
         
         score = calculateScore(correct, answers);
         score = p.getPoints() + score;
-        System.out.println(TAG + " score: " + score);
+        System.out.println(TAG + "update->score: " + score);
         
         PreparedStatement ps1 = null, ps2 = null, ps3 = null;
         String insertQuery = "";
@@ -272,7 +270,7 @@ public class MarkTest {
             // lookup email_hash
             ps2 = conn.prepareStatement(pointsSelectQuery);
             ps2.setString(1, hashedEmail);
-            
+
             // create and initialize PreparedStatement to get max test id
             ps3 = conn.prepareStatement(maxIdQuery);
             
@@ -450,22 +448,6 @@ public class MarkTest {
 	}
 
 
-	
-	private int calculateCorrect(int[] answers, int[] correct){
-	    int output = 0;
-	    if(answers.length != correct.length){
-	        output = -1;
-	    }
-	    else{
-	        for(int i = 0; i < answers.length; i++){
-	            if(answers[i] == correct[i]){
-	                output++;
-	            }
-	        }
-	    }
-	    return output;
-	}
-	
 	private int calculateScore(int[] answers, int[] correct){
 	    int score = 0;
 	    if(answers.length != correct.length){

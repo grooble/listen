@@ -101,7 +101,7 @@ public class StatusUpdate extends HttpServlet {
                 + "size: "   + size);
         
         Member memberTools = new Member();
-        Person user = (Person) memberTools.lookup(ds, email);
+        Person user = (Person) memberTools.verify(ds, email, password);
         if(null == user){
             try {
                 JSONContainer.put("error", "user not found");

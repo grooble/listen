@@ -60,14 +60,16 @@ public class TutUpdateHandler extends HttpServlet {
 
         // get Member instance and update tutorialStatus to DB
         Member m = new Member();
-        Person p = m.verify(ds, email, password);
-        if(p.getEmail() != null){            
-            m.updateTutorial(ds, email, password, tutorialStatus);
-        }
+        boolean updated = m.updateTutorial(ds, email, password, tutorialStatus);
         response.setContentType("text/html");
         JSONObject job = new JSONObject();
         try {
-            job.put("update", "updated");
+            if (updated){
+                job.put("update", "updated");
+            }
+            else{
+                job.put("update",  "not updated");
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
