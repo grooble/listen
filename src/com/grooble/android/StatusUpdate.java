@@ -111,7 +111,7 @@ public class StatusUpdate extends HttpServlet {
         }
         else{
             UserBuilderT builder = new UserBuilderT(user, password, ds);
-            System.out.println(TAG + "-->user: " + user.getFirstName());
+            System.out.println(TAG + "-->user email: " + user.getEmail());
             
             // check for empty status and if not empty
             // create Status and call setStatus in Update.java

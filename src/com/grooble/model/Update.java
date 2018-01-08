@@ -46,10 +46,12 @@ public class Update {
 		}		
 	}
 
+
 	public void setStatus(DataSource ds, Status status){
 		Statement stmt = null;
 		PreparedStatement ps = null;
-//		MySQLクエリー
+        
+        //		MySQLクエリー
 		String insertQuery = 
 			"INSERT INTO activities " +
 			"(user, act_type, act_value, parent)" +
@@ -109,6 +111,7 @@ public class Update {
         ResultSet rs = null, rs2 = null;
         Status comment = null;
         int id = 0;
+        
 //      MySQLクエリー
         String insertQuery = 
             "INSERT INTO activities " +
@@ -132,7 +135,9 @@ public class Update {
             ps.setInt(4, status.getParent());
             System.out.println(TAG + "Insert: " + ps.toString());
             stmt.executeUpdate("USE teacher");
+            // Insert status
             ps.executeUpdate();
+            // Obtain LAST_INSERT_ID()
             rs = stmt2.executeQuery(selectRecent);
             
             while(rs.next()){
@@ -167,7 +172,8 @@ public class Update {
         
         return comment;
     }
-    
+
+
 	public List<Status> getStatus
 				(DataSource ds, int user, int start, int size){
 
@@ -236,7 +242,7 @@ public class Update {
 					status.setParent(rs.getInt(4));
 					status.setUser(rs.getString(5));
 					status.setPic(rs.getString(6));
-					status.setContent(rs.getString(7));
+	                status.setContent(rs.getString(7));
 					status.setType(rs.getString(8));
 					System.out.println("Update-->getStatus: " + 
 							status.getId() + " " +
@@ -257,6 +263,7 @@ public class Update {
 		}					
 		return recents;
 	}
+	
 	
 	/*
 	 * Overloaded method to return updates showing user and 
@@ -286,7 +293,7 @@ public class Update {
 		PreparedStatement ps = null;
 		
 		try{
-System.out.println("Update-friend overload-->in getStatus try");
+            System.out.println("Update-friend overload-->in getStatus try");
 			conn = ds.getConnection();
 			stmt = conn.createStatement();
 			ps = conn.prepareStatement(selectQuery);
@@ -297,7 +304,7 @@ System.out.println("Update-friend overload-->in getStatus try");
 			System.out.println("Update-->ps: " + ps);
 			stmt.executeUpdate("USE teacher");
 			rs = ps.executeQuery();
-//System.out.println("Update-->executed query");
+            //System.out.println("Update-->executed query");
 			if(!rs.isBeforeFirst()){
 				System.out.println("Update-->result set is empty");		
 			} else{
