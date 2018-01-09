@@ -94,28 +94,33 @@ public class ContactUtils extends HttpServlet {
         // create temp DB and populate with foundList
         ResultSet rs = null;
         Statement stmt = null;
+        
+        // create temporary table 'emails' and store the emails retrieved from the sent parameter
         String createQuery = 
                 "CREATE TEMPORARY TABLE emails (id SMALLINT NOT NULL AUTO_INCREMENT,"
-                + " email VARCHAR(60),"
+                + " email VARCHAR(100),"
+                + " email_hash VARCHAR(100),"
                 + " PRIMARY KEY(id),"
                 + " INDEX(email));";
+        
+        // add emails and email_hash to the table
         String insertQuery = 
-                "INSERT INTO emails (email)"
-                + " VALUES " + emailParameter + ";";
+                "INSERT INTO emails (email, email_hash)"
+                + " VALUES (" + emailParameter + ", " + String.valueOf(emailParameter.hashCode()) + " );";
         
         // Selects those with the app installed except for those already pended.
         String selectQuery =
                 "SELECT DISTINCT emails.email FROM emails "
-                + "INNER JOIN students ON students.email = emails.email "
+                + "INNER JOIN students ON students.email_hash = emails.email_hash "
                 + "LEFT JOIN "
                 + "( "
-                        + "SELECT pending.approver, students.email "
+                        + "SELECT pending.approver, students.email_hash "
                         + "FROM students "
                         + "INNER JOIN pending ON pending.approver = students.stdid "
                         + "WHERE pending.requester = ? "
                         + ") AS p "
-                + "ON emails.email = p.email " 
-                + "WHERE p.email IS NULL;";
+                + "ON emails.email_hash = p.email_hash " 
+                + "WHERE p.email_hash IS NULL;";
         
         String dropQuery = "DROP TABLE emails;";
 
@@ -193,9 +198,8 @@ public class ContactUtils extends HttpServlet {
             try {if (con != null) con.close();} catch (SQLException e) {}
         }
 
-        
+        System.out.println(TAG + "findRegistered -> foundList.size(): " + foundList.size());
         // return matches
         return foundList;
     }
-
 }
