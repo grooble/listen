@@ -483,12 +483,19 @@ public class Member {
 		String update = "";
 		if(dob != null){
 		    update = 
-		            "UPDATE students SET firstname=?, lastname=?, date_of_birth=? WHERE email=?";
+		            "UPDATE students SET firstname=?, lastname=?, date_of_birth=? WHERE email_hash=?";
 		    System.out.println("Member--> dob is null");
 		}
 		else {
-		    update = "UPDATE students SET firstname=?, lastname=? WHERE email=?";
+		    update = "UPDATE students SET firstname=?, lastname=? WHERE email_hash=?";
 		}
+		
+		if(fname == null){fname = "";}
+		if(lname == null){lname = "";}
+
+		// encrypted first and last names
+		String cypherFirstName = encryptor.encrypt(fname, password);
+		String cypherLastName = encryptor.encrypt(lname, password);
 		
 		try{
 			conn = ds.getConnection();
@@ -496,15 +503,15 @@ public class Member {
 			stmt.executeUpdate("USE teacher");
 			String insertQry = update;
 			ps = conn.prepareStatement(insertQry);
-			ps.setString(1, fname);
-			ps.setString(2, lname);
+			ps.setString(1, cypherFirstName);
+			ps.setString(2, cypherLastName);
 			// only set dob if present in parameters
 			if(dob != null){
 			    ps.setDate(3, dob);
 			    ps.setString(4, email.toLowerCase());			    
 			}
 			else{
-                ps.setString(3, email.toLowerCase());               			    
+                ps.setString(3, String.valueOf(email.toLowerCase().hashCode()));               			    
 			}
 			System.out.println("Member-->Updating name..." + ps.toString());
 
@@ -520,6 +527,7 @@ public class Member {
 		}		
 
 		Person p = this.verify(ds, email, password);
+		System.out.println(TAG + "fname: " + p.getFirstName() + "; lname: " + p.getLastName());
         return p;
 	}
 	
