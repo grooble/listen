@@ -1,5 +1,6 @@
 package com.grooble.model;
 
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -9,7 +10,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
+import com.grooble.model.EncryptionProtocol;
 import javax.sql.DataSource;
 
 import BCrypt.BCrypt;
@@ -26,6 +27,12 @@ public class Member {
 	private Connection conn;
 	private EncryptionProtocol encryptor = new EncryptionProtocol();
 	private static final String TAG = "Member ";
+	private static final String alphanumeric =
+	        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	        + "abcdefghijklmnopqrstuvwxyz"
+	        + "1234567890"
+	        + "!#$%&()+*<>?_-=^~|";
+	private static SecureRandom rnd = new SecureRandom();
 	
 	public Person verify(DataSource ds, 
 			Integer id){
@@ -307,9 +314,19 @@ public class Member {
         // Create password hash to add to DB
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
+        // Generate surrogate encryption key from random string
+        String surrogatePassword = randomString(24);
+        String surrogateKey = encryptor.getKey(surrogatePassword);
+        
+        // Create secondary locking key from privacy question answers
+        String answer = recoveryAnswer.toUpperCase();
+        String lockingKey = encryptor.getKey(answer);
+        
+        // XOR surrogate key with locking key to store as backup key
+        String backupKey = "";
+        
         // Encrypt and hash email
-        EncryptionProtocol encrypter = new EncryptionProtocol();
-        String encryptedMail = encrypter.encrypt(mail, password);
+        String encryptedMail = encryptor.encrypt(mail, password);
         // Create hash of mail for lookup
         String hashedMail = String.valueOf(mail.hashCode());
 
@@ -912,6 +929,13 @@ public class Member {
 
         // return decrypted person
         return person;
+    }
+    
+    private String randomString(int length){
+        StringBuilder sb = new StringBuilder(length);
+        for( int i = 0; i < length; i++ ) 
+           sb.append( alphanumeric.charAt( rnd.nextInt(alphanumeric.length()) ) );
+        return sb.toString();
     }
 	
 }

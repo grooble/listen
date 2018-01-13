@@ -2,8 +2,6 @@ package com.grooble.test;
 
 import java.io.ByteArrayOutputStream;
 import java.security.AlgorithmParameters;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
@@ -20,7 +18,7 @@ public class EncryptTest {
     
     private static String password = "grooble";
     private static String encrypted;
-    
+ /*   
     public static void main(String[] args){
         final String email = "grooble@gmail.com";
         int h = email.hashCode();
@@ -36,7 +34,7 @@ public class EncryptTest {
         System.out.println("decrypted text: ");
         System.out.println(decrypt(encrypted) + "\n");
     }
-    
+   */ 
     public static String encrypt(String str) {
         try {
             SecureRandom random = new SecureRandom();
