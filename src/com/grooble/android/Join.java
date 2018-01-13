@@ -59,6 +59,8 @@ public class Join extends HttpServlet{
         // get clear email and password
         String mail = request.getParameter("email").toLowerCase();
         String password = request.getParameter("password");
+        String recoveryAnswer = request.getParameter("recovery");
+        int recoverable = 0;
         
         System.out.println(TAG + "email: " + mail + ", pwd: " + password);
                 
@@ -80,7 +82,7 @@ public class Join extends HttpServlet{
             else {         
                 // Add new member
                 System.out.println(TAG + "adding member: email: " + mail + "; password: " + password);
-                m.addMember(ds, mail, password);
+                m.addMember(ds, mail, password, recoveryAnswer);
                 
                 // Check success of Join action. Verify and get current joined user.
                 Person checkedUser = m.verify(ds, mail, password);

@@ -13,6 +13,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
+import org.apache.commons.codec.binary.Hex;
 
 public class EncryptionProtocol {
     public String encrypt(String str, String password) {
@@ -75,6 +76,29 @@ public class EncryptionProtocol {
             e.printStackTrace();
         }
         return null;
+    }
+    
+    
+    // return encryption key
+    public String getKey(String password){
+        try {
+            SecureRandom random = new SecureRandom();
+            byte[] salt = new byte[16];
+            random.nextBytes(salt);
+            
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+            // obtain secret key
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 256); 
+            SecretKey tmp = factory.generateSecret(spec);
+            SecretKey secret = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+            String charKey = Hex.encodeHexString(secret.getEncoded());
+            return charKey;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+        
     }
 
 }

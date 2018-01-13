@@ -293,9 +293,14 @@ public class Member {
     }
 
 
-    // insert new member into the student database
+    /*
+     * Add new member to database.
+     * Add hashed password, create random surrogate password and store.
+     * Create a secondary locking key from user privacy question.
+     * Xor the surrogate key with the secondary locking key and store that as a backup key.
+     */
     public void addMember(DataSource ds, 
-								String mail, String password){
+								String mail, String password, String recoveryAnswer){
         Statement stmt = null;
 		PreparedStatement ps = null;
 		
