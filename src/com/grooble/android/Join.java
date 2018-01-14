@@ -60,7 +60,6 @@ public class Join extends HttpServlet{
         String mail = request.getParameter("email").toLowerCase();
         String password = request.getParameter("password");
         String recoveryAnswer = request.getParameter("recovery");
-        int recoverable = 0;
         
         System.out.println(TAG + "email: " + mail + ", pwd: " + password);
                 

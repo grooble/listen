@@ -7,11 +7,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import com.grooble.model.EncryptionProtocol;
+
+import javax.crypto.SecretKey;
 import javax.sql.DataSource;
+import javax.xml.bind.DatatypeConverter;
 
 import BCrypt.BCrypt;
 
@@ -139,9 +143,11 @@ public class Member {
     }
     
 
-	
-	// This method is used in the login lookup
-	// Looks up user on the hashed_email field and may return more than one user
+	/*
+	 * This method is used in the login lookup
+	 * Looks up user on the hashed_email field and 
+	 * may return more than one user if there is a hash table collision
+	 */
 	public Person verify(DataSource ds, String mail, String password){
 	    
         // Create hash of mail for lookup
@@ -158,6 +164,7 @@ public class Member {
 		    "firstname, " +
 			"lastname, " + 
 		    "email, " + 
+			"surrogate_key" +
 		    "profilepic, " +
 			"points, " +
 		    "tutorial, " +
@@ -185,11 +192,12 @@ public class Member {
 					person.setFirstName(rs.getString(2));  // encrypted
 					person.setLastName(rs.getString(3));   // encrypted
 					person.setEmail(rs.getString(4));      // encrypted
+					person.setSurrogate(rs.getString(5));
 					person.setPassword(password);   // use password that was passed to method
-					person.setProfilePic(rs.getString(5)); // url encrypted
-					person.setPoints(rs.getInt(6));        // not encrypted
-					person.setTutorial(rs.getBoolean(7));  // not encrypted
-					String fcm_token = rs.getString(8);    // not encrypted
+					person.setProfilePic(rs.getString(6)); // url encrypted
+					person.setPoints(rs.getInt(7));        // not encrypted
+					person.setTutorial(rs.getBoolean(8));  // not encrypted
+					String fcm_token = rs.getString(9);    // not encrypted
 					// fcm_token may be null if it is a web user rather than android user
 					if(rs.wasNull()){
 					    fcm_token = "";
@@ -216,11 +224,14 @@ public class Member {
 		else{
 		    // handle hash collision where more than one result is returned from the DB
 		    // and decrypt the returned person
+		    
+		    // get SecretKey
+		    SecretKey secret = encryptor.getKeyFromString(person.getSurrogate());
 		    if (results.size() > 1){
-		        personToReturn = this.getDecryptedPerson(deCollide(results, mail, password), password);
+		        personToReturn = this.getDecryptedPerson(deCollide(results, mail, secret), secret);
 		    }
 		    else{
-		        personToReturn = this.getDecryptedPerson(results.get(0), password);	
+		        personToReturn = this.getDecryptedPerson(results.get(0), secret);	
 		    }
 		}
 		System.out.println(TAG + "verify->person->email, points: " + personToReturn.getEmail() + ", " + 
@@ -315,25 +326,40 @@ public class Member {
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
         // Generate surrogate encryption key from random string
-        String surrogatePassword = randomString(24);
-        String surrogateKey = encryptor.getKey(surrogatePassword);
+        String rand = randomString(24);
+        SecretKey surrogateKey = encryptor.getKey(rand);
+        String surrogateKeyString =
+                DatatypeConverter.printBase64Binary(surrogateKey.getEncoded());
+        String lockingKeyString = "";
+        String backupKeyString = "";
         
-        // Create secondary locking key from privacy question answers
-        String answer = recoveryAnswer.toUpperCase();
-        String lockingKey = encryptor.getKey(answer);
-        
-        // XOR surrogate key with locking key to store as backup key
-        String backupKey = "";
+        // check for recovery answer and initialize recoverable
+        // if there is no answer, the password will not be recoverable
+        String answer = "";
+        int recoverable = 0;
+        if((recoveryAnswer != null) && (recoveryAnswer.length()>0)){
+            answer = recoveryAnswer.toUpperCase();
+            lockingKeyString = 
+                    DatatypeConverter.printBase64Binary(encryptor.getKey(answer).getEncoded());
+            recoverable = 1;
+
+            // XOR surrogate key with locking key to store as backup key
+            byte[] backupByteArray = encryptor.xorWithKey(
+                    DatatypeConverter.parseBase64Binary(surrogateKeyString), 
+                    DatatypeConverter.parseBase64Binary(lockingKeyString)
+                    );
+            backupKeyString = DatatypeConverter.printBase64Binary(backupByteArray);
+        }
         
         // Encrypt and hash email
-        String encryptedMail = encryptor.encrypt(mail, password);
+        String encryptedMail = encryptor.encryptWithKey(mail, surrogateKey);
         // Create hash of mail for lookup
         String hashedMail = String.valueOf(mail.hashCode());
 
 
 		//			MySQLのインサートクエリー
-		String ins1 = "INSERT INTO students(email, email_hash, password, tutorial) " ;
-		String ins2 = "VALUES (?, ?, ?, 1)";
+		String ins1 = "INSERT INTO students(email, email_hash, password, tutorial, surrogate_key, backup_key, recoverable) " ;
+		String ins2 = "VALUES (?, ?, ?, 1, ?, ?, ?)";
 		
 		try{
 			conn = ds.getConnection();
@@ -345,6 +371,9 @@ public class Member {
 			ps.setString(1, encryptedMail);
 			ps.setString(2, hashedMail);
 			ps.setString(3, hashedPassword);
+			ps.setString(4, surrogateKeyString);
+			ps.setString(5, backupKeyString);
+            ps.setInt(6, recoverable);
 			System.out.println("Member-->PreparedStatementE: " + ps.toString());
 
 			ps.executeUpdate();
@@ -495,10 +524,41 @@ public class Member {
 	 *  Edit name and other details
 	 *  TODO implement encryption
 	 */
-	public Person updateName(DataSource ds, String email, String password, String fname, String lname, Date dob){
+	public Person updateName(DataSource ds, Person person){
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		
+		// get user parameters
+		String email = person.getEmail();
+		String password = person.getPassword();
+		String surrogate = person.getSurrogate();
+		String dob = person.getDOB();
+		String fname = person.getFirstName();
+		String lname = person.getLastName();
+		
+		Date myDate = null;
+
+		// parse dob to sqldate
+		java.sql.Date sqlDate = null;
+		String[] dateObjects;
+		if((dob != null) && (dob.length() > 0)){
+		    dateObjects = dob.split("/");
+		    if(dateObjects.length == 3){		        
+		        int month = Integer.parseInt(dateObjects[0]);
+		        int day = Integer.parseInt(dateObjects[1]);
+		        int year = Integer.parseInt(dateObjects[2]);
+		        String dateFormatString = "MM/dd/yy";
+		        SimpleDateFormat df = new SimpleDateFormat(dateFormatString);
+		        try {
+		            myDate = (Date) df.parse(dob);
+		        } catch (ParseException e) {
+		            e.printStackTrace();
+		        }
+		        sqlDate = new java.sql.Date(myDate.getTime());
+		    }
+		} 
+
+		SecretKey secret = encryptor.getKeyFromString(surrogate);
 		//			MySQLのインサートクエリー
 		// Check if dob is null, and if so, only update name
 		// otherwise update name and date of birth.
@@ -516,8 +576,8 @@ public class Member {
 		if(lname == null){lname = "";}
 
 		// encrypted first and last names
-		String cypherFirstName = encryptor.encrypt(fname, password);
-		String cypherLastName = encryptor.encrypt(lname, password);
+		String cypherFirstName = encryptor.encryptWithKey(fname, secret);
+		String cypherLastName = encryptor.encryptWithKey(lname, secret);
 		
 		try{
 			conn = ds.getConnection();
@@ -529,7 +589,7 @@ public class Member {
 			ps.setString(2, cypherLastName);
 			// only set dob if present in parameters
 			if(dob != null){
-			    ps.setDate(3, dob);
+			    ps.setDate(3, myDate);
 			    ps.setString(4, email.toLowerCase());			    
 			}
 			else{
@@ -872,14 +932,14 @@ public class Member {
      * The hashed email lookup in verify may return multiple results.
      * decrypt and verify email to determine the correct user and return them.
      */
-    private Person deCollide(List<Person> results, String email, String password){
+    private Person deCollide(List<Person> results, String email, SecretKey secret){
         Person p = new Person();
         
         Iterator<Person> it = results.iterator();
         while (it.hasNext()){
             p = it.next();
             String encryptedMail = p.getEmail();
-            String clearMail = encryptor.decrypt(encryptedMail, password);
+            String clearMail = encryptor.decryptWithKey(encryptedMail, secret);
             if(clearMail.equals(email)){break;}
         }
         return p;
@@ -890,7 +950,7 @@ public class Member {
      *  Convenience method to decrypt the fields of a Person object
      *  and return a non-encrypted Person
      */
-    private Person getDecryptedPerson(Person person, String password){
+    private Person getDecryptedPerson(Person person, SecretKey secret){
         
         // Initialize fields that need to be decrypted
         String email, firstName, lastName, dob, fbid, fcm, profilePic = null;
@@ -904,27 +964,22 @@ public class Member {
         
         // Decrypt where the field is not null or empty
         if(!(email == null) && !email.isEmpty()){
-            person.setEmail(encryptor.decrypt(email, password));
+            person.setEmail(encryptor.decryptWithKey(email, secret));
         }
         if(!(firstName == null) && !firstName.isEmpty()){
-            person.setFirstName(encryptor.decrypt(firstName, password));
+            person.setFirstName(encryptor.decryptWithKey(firstName, secret));
         }
         if(!(lastName == null) && !lastName.isEmpty()){
-            person.setLastName(encryptor.decrypt(lastName, password));
+            person.setLastName(encryptor.decryptWithKey(lastName, secret));
         }
         if(!(dob == null) && !dob.isEmpty()){
-            person.setDOB(encryptor.decrypt(dob, password));
+            person.setDOB(encryptor.decryptWithKey(dob, secret));
         }
         if(!(fbid == null) && !fbid.isEmpty()){
-            person.setDOB(encryptor.decrypt(dob, password));
+            person.setDOB(encryptor.decryptWithKey(fbid, secret));
         }
-        /*
-        if(!(fcm == null) && !fcm.isEmpty()){
-            person.setFcm_token(encryptor.decrypt(fcm, password));
-        }
-        */
         if(!(profilePic == null) && !profilePic.isEmpty()){
-            person.setProfilePic(encryptor.decrypt(profilePic, password));
+            person.setProfilePic(encryptor.decryptWithKey(profilePic, secret));
         }
 
         // return decrypted person

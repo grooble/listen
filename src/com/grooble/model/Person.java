@@ -19,7 +19,8 @@ public class Person implements Serializable{
 	private String lastName;
 	private String email;
 	private String password;
-	private String DOB;
+	private String surrogate;
+    private String DOB;
 	private String profilePic;
 	private boolean tutorial;
 	private int points;
@@ -74,6 +75,13 @@ public class Person implements Serializable{
 		this.password = password;
 	}
 	
+	public String getSurrogate() {
+	    return surrogate;
+	}
+	public void setSurrogate(String surrogate) {
+	    this.surrogate = surrogate;
+	}
+
 	public String getDOB(){
 		return DOB;
 	}

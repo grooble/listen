@@ -47,27 +47,16 @@ public class NameUpdate extends HttpServlet {
 		
 		Person p = (Person)session.getAttribute("user");
 		String email = p.getEmail().toLowerCase();
-		java.sql.Date sqlDate = null;
-		System.out.println("NameUpdate->month: " +
-				month +
-				"day: " + day +
-				"year: " + year);
 		
-		if(!(month.isEmpty() || day.isEmpty() || year.isEmpty())){
-			String date = month + "/" + day + "/" + year;
-			String dateFormatString = "MM/dd/yy";
-			SimpleDateFormat df = new SimpleDateFormat(dateFormatString);
-			Date myDate = null;
-			try {
-				myDate = df.parse(date);
-			} catch (ParseException e) {
-				e.printStackTrace();
-			}
-			sqlDate = new java.sql.Date(myDate.getTime());
-		} 
+		// set fname, lastname, dob to person to pass to Member
+		p.setFirstName(firstName);
+		p.setLastName(lastName);
+		p.setDOB(month + "/" + day + "/" + year);
+		p.setEmail(email);
+		p.setPassword(password);
 		
 		Member m = new Member();
-		p = m.updateName(ds, email, password, firstName, lastName, sqlDate);
+		p = m.updateName(ds, p);
 		
 		session.setAttribute("user", p);
 		
