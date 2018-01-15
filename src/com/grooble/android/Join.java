@@ -61,6 +61,9 @@ public class Join extends HttpServlet{
         String password = request.getParameter("password");
         String recoveryAnswer = request.getParameter("recovery");
         
+        // Set recovery answer for testing
+        recoveryAnswer = "test answer";
+        
         System.out.println(TAG + "email: " + mail + ", pwd: " + password);
                 
         //exit if email and password paramaters are not found

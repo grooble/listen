@@ -34,13 +34,6 @@ public class UserBuilderT {
         this.friender = new Friender();
     }
     
-    protected Person updateName(Person user, String fname, String lname){
-        
-        Person updatedUser = memberTools.updateName(datasource, user.getEmail(), password, fname, lname, null);
-        
-        return updatedUser;
-    }
-    
     protected List<Person> getUserFriends(){
 
         // ArrayLists to hold friends and pending friends

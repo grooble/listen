@@ -51,13 +51,28 @@ public class UserUpdateUtils extends HttpServlet {
         System.out.println(TAG + " got params...fname: " + fname + ", lname: " + lname);
         System.out.println(TAG + " got login params...email: " + email + ", pwd: " + password);
         
+        Member member = new Member();
         JSONObject outJSON = new JSONObject();
-        Person user = new Member().verify(ds, email, password);
-        if(user != null){            
-            //UserBuilder builder = new UserBuilder(user, ds);
-            UserBuilderT builder = new UserBuilderT(user, password, ds);
+        Person user = member.verify(ds, email, password);
+        
+        
+        if(user != null){
+            // add name to user for update
+            if(fname != null){
+                user.setFirstName(fname);
+            }
+            else{
+                user.setFirstName("");
+            }
             
-            Person updatedUser = builder.updateName(user, fname, lname);
+            if(lname != null){
+                user.setLastName(lname);
+            }
+            else{
+                user.setLastName("");
+            }
+
+            Person updatedUser = member.updateName(ds, user);
             
             try {
                 outJSON.put("user", updatedUser.getJSONObject());

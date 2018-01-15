@@ -164,7 +164,7 @@ public class Member {
 		    "firstname, " +
 			"lastname, " + 
 		    "email, " + 
-			"surrogate_key" +
+			"surrogate_key, " +
 		    "profilepic, " +
 			"points, " +
 		    "tutorial, " +
@@ -574,6 +574,8 @@ public class Member {
 		
 		if(fname == null){fname = "";}
 		if(lname == null){lname = "";}
+		System.out.println(TAG + "addName->fname: " + fname + " lname: " + lname);
+		System.out.println(TAG + "addName->secret: " + DatatypeConverter.printBase64Binary(secret.getEncoded()));
 
 		// encrypted first and last names
 		String cypherFirstName = encryptor.encryptWithKey(fname, secret);
