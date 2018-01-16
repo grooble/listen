@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.sql.DataSource;
 import javax.xml.bind.DatatypeConverter;
 
@@ -226,7 +227,15 @@ public class Member {
 		    // and decrypt the returned person
 		    
 		    // get SecretKey
-		    SecretKey secret = encryptor.getKeyFromString(person.getSurrogate());
+		    SecretKey storedKey = encryptor.getKeyFromString(person.getSurrogate());
+		    byte[] storedByteArray = storedKey.getEncoded();
+		    byte[] passwordByteArray = encryptor.getKey(password).getEncoded();
+		    
+		    // recover encryption key from XOR of password key and stored key
+		    byte[] recoveredKey = encryptor.xorWithKey(storedByteArray, passwordByteArray);
+		    SecretKey secret = new SecretKeySpec(recoveredKey, 0, recoveredKey.length, "AES");
+		    System.out.println(TAG + "verify secret: " + DatatypeConverter.printBase64Binary(secret.getEncoded()));
+		    
 		    if (results.size() > 1){
 		        personToReturn = this.getDecryptedPerson(deCollide(results, mail, secret), secret);
 		    }
@@ -313,9 +322,9 @@ public class Member {
 
     /*
      * Add new member to database.
-     * Add hashed password, create random surrogate password and store.
-     * Create a secondary locking key from user privacy question.
-     * Xor the surrogate key with the secondary locking key and store that as a backup key.
+     * Add hashed password, create random surrogate key, XOR with password key and store.
+     * Create a secondary locking key from user privacy question,
+     * XOR the surrogate key with the secondary locking key and store that as a backup key.
      */
     public void addMember(DataSource ds, 
 								String mail, String password, String recoveryAnswer){
@@ -328,10 +337,18 @@ public class Member {
         // Generate surrogate encryption key from random string
         String rand = randomString(24);
         SecretKey surrogateKey = encryptor.getKey(rand);
-        String surrogateKeyString =
-                DatatypeConverter.printBase64Binary(surrogateKey.getEncoded());
-        String lockingKeyString = "";
+        byte[] surrogateByteArray = surrogateKey.getEncoded();
+        System.out.println(TAG + "addMember surrogate: " + DatatypeConverter.printBase64Binary(surrogateByteArray));
+
+        String backupLockingKeyString = "";
         String backupKeyString = "";
+        
+        // Obtain locking key. This will be XORed with surrogate key and stored
+        SecretKey lockingKey = encryptor.getKey(password);
+        
+        // This string is stored in DB and XORed with password key to recover surrogate key
+        byte[] keyByteArray = encryptor.xorWithKey(surrogateKey.getEncoded(), lockingKey.getEncoded());
+        String keyString = DatatypeConverter.printBase64Binary(keyByteArray);
         
         // check for recovery answer and initialize recoverable
         // if there is no answer, the password will not be recoverable
@@ -339,14 +356,13 @@ public class Member {
         int recoverable = 0;
         if((recoveryAnswer != null) && (recoveryAnswer.length()>0)){
             answer = recoveryAnswer.toUpperCase();
-            lockingKeyString = 
-                    DatatypeConverter.printBase64Binary(encryptor.getKey(answer).getEncoded());
+            byte[] backupLockingKeyByteArray = encryptor.getKey(answer).getEncoded();
             recoverable = 1;
 
             // XOR surrogate key with locking key to store as backup key
             byte[] backupByteArray = encryptor.xorWithKey(
-                    DatatypeConverter.parseBase64Binary(surrogateKeyString), 
-                    DatatypeConverter.parseBase64Binary(lockingKeyString)
+                    surrogateByteArray, 
+                    backupLockingKeyByteArray
                     );
             backupKeyString = DatatypeConverter.printBase64Binary(backupByteArray);
         }
@@ -371,7 +387,7 @@ public class Member {
 			ps.setString(1, encryptedMail);
 			ps.setString(2, hashedMail);
 			ps.setString(3, hashedPassword);
-			ps.setString(4, surrogateKeyString);
+			ps.setString(4, keyString);
 			ps.setString(5, backupKeyString);
             ps.setInt(6, recoverable);
 			System.out.println("Member-->PreparedStatementE: " + ps.toString());

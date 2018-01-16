@@ -68,14 +68,8 @@ public class Login extends HttpServlet {
         if (mail != null){
             System.out.println("grooble.android.Login...email: " + mail);
         }
-        else{
-            System.out.println("Login->email is null");
-        }
         if (password != null){
             System.out.println("grooble.android.Login...password1: " + password);
-        }
-        else{
-            System.out.println("Login->password is null");
         }
 
  /*
