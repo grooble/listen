@@ -1,10 +1,15 @@
 package com.grooble.test;
 
+import java.io.ByteArrayOutputStream;
+import java.security.AlgorithmParameters;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
+import java.util.Arrays;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
@@ -16,6 +21,8 @@ public class SurrogateTest {
             + "1234567890"
             + "!#$%&()+*<>?_-=^~|";
 
+    private static String plainText = "I am the very model of a modern major general";
+    private static String cipherText = "";
     private static SecureRandom rnd = new SecureRandom();
 
     private static byte[] salt;
@@ -26,20 +33,20 @@ public class SurrogateTest {
             System.out.println("password: " + args[0] + "; recovery: " + args[1]);
         }
         String password = args[0];
-        String recovery = args[1];
         
         // passwordKey
         SecretKey passwordKey = getKey(password);
         System.out.println("passwordKey: " + DatatypeConverter.printBase64Binary(passwordKey.getEncoded()));
         
-        SecretKey recoveryKey = getKey(recovery);
-        System.out.println("recoveryKey: " + DatatypeConverter.printBase64Binary(recoveryKey.getEncoded()));
-
         // Generate surrogate encryption key from random string
         String rand = randomString(24);
         SecretKey surrogateKey = getKey(rand);
         byte[] surrogateByteArray = surrogateKey.getEncoded();
         System.out.println("surrogate: " + DatatypeConverter.printBase64Binary(surrogateByteArray));
+        
+        // encrypt plainText
+        System.out.println("text to encrypt: " + plainText);
+        cipherText = encryptWithKey(plainText, surrogateKey);
 
         // XOR surrogateKey with passwordKey to get storedKey
         SecretKey storedKey = xorWithKey(surrogateKey, passwordKey);
@@ -51,9 +58,15 @@ public class SurrogateTest {
         String storedKey2String = DatatypeConverter.printBase64Binary(storedKey2.getEncoded());
         System.out.println("storedKey->String->key->string: " + storedKey2String);
         
-        // XOR surrogateKey with recoveryKey to get backupKey
-        SecretKey backupKey = xorWithKey(surrogateKey, recoveryKey);
-        System.out.println("backupKey: "+ DatatypeConverter.printBase64Binary(backupKey.getEncoded()));
+        // recover surrogateKey from storedKey2
+        SecretKey password2Key = getKey(password);
+        System.out.println("password2Key: " + DatatypeConverter.printBase64Binary(password2Key.getEncoded()));
+        SecretKey surrogate2Key = xorWithKey(storedKey2, password2Key);
+        System.out.println("surrogate2 (recovered): " + DatatypeConverter.printBase64Binary(surrogate2Key.getEncoded()));
+        
+        // decrypt text
+        String decryptedText = decryptWithKey(cipherText, surrogate2Key);
+        System.out.println("decryptedText: " + decryptedText);
     }
     
     private static SecretKey xorWithKey(SecretKey a, SecretKey b) {
@@ -74,7 +87,7 @@ public class SurrogateTest {
     }
 
     // return encryption key
-    public static SecretKey getKey(String password){
+    private static SecretKey getKey(String password){
         try {
             SecureRandom random = new SecureRandom();
             salt = new byte[16];
@@ -93,5 +106,52 @@ public class SurrogateTest {
         return null;
     }
 
+    private static String encryptWithKey(String str, SecretKey secret) {
+        try {            
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, secret);
+            AlgorithmParameters params = cipher.getParameters();
+            byte[] iv = params.getParameterSpec(IvParameterSpec.class).getIV();
+            byte[] encryptedText = cipher.doFinal(str.getBytes("UTF-8")); // encrypt the message str here
+            
+            // concatenate salt + iv + ciphertext
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            
+            outputStream.write(salt);
+            outputStream.write(iv);
+            outputStream.write(encryptedText);
+            
+            // properly encode the complete ciphertext
+            String encrypted = DatatypeConverter.printBase64Binary(outputStream.toByteArray());
+            return encrypted;
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    private static String decryptWithKey(String str, SecretKey secret) {
+        try {
+            byte[] ciphertext = DatatypeConverter.parseBase64Binary(str);
+            if (ciphertext.length < 48) {
+                return null;
+            }
+            salt = Arrays.copyOfRange(ciphertext, 0, 16);
+            byte[] iv = Arrays.copyOfRange(ciphertext, 16, 32);
+            byte[] ct = Arrays.copyOfRange(ciphertext, 32, ciphertext.length);
+            
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            
+            cipher.init(Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
+            byte[] plaintext = cipher.doFinal(ct);
+            
+            return new String(plaintext, "UTF-8");
+      
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
 }
