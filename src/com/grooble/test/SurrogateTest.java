@@ -15,6 +15,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 
 public class SurrogateTest {
+    
+    private static final String SALT = "XwM1/8gFIX4OlHYJi7dknQ==";
     private static final String alphanumeric =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             + "abcdefghijklmnopqrstuvwxyz"
@@ -28,6 +30,9 @@ public class SurrogateTest {
     private static byte[] salt;
 
     public static void main(String[] args) {
+        // set salt
+        salt = DatatypeConverter.parseBase64Binary(SALT);
+        
         // arguments are password and recovery string
         if(args.length>1){            
             System.out.println("password: " + args[0] + "; recovery: " + args[1]);
@@ -89,10 +94,7 @@ public class SurrogateTest {
     // return encryption key
     private static SecretKey getKey(String password){
         try {
-            SecureRandom random = new SecureRandom();
-            salt = new byte[16];
-            random.nextBytes(salt);
-            
+            System.out.println("salt: " + DatatypeConverter.printBase64Binary(salt));
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
             // obtain secret key
             KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 256);
