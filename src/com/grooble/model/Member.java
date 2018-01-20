@@ -327,18 +327,18 @@ public class Member {
      * XOR the surrogate key with the secondary locking key and store that as a backup key.
      */
     public void addMember(DataSource ds, 
-								String mail, String password, String recoveryAnswer){
+								String mail, String password){
         Statement stmt = null;
 		PreparedStatement ps = null;
 		
         // Create password hash to add to DB
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
-        // Generate surrogate encryption key from random string
+        // Generate data encryption key from random string
         String rand = randomString(24);
-        SecretKey surrogateKey = encryptor.getKey(rand);
-        byte[] surrogateByteArray = surrogateKey.getEncoded();
-        System.out.println(TAG + "addMember surrogate: " + DatatypeConverter.printBase64Binary(surrogateByteArray));
+        SecretKey dataKey = encryptor.getKey(rand);
+        byte[] dataKeyByteArray = dataKey.getEncoded();
+        System.out.println(TAG + "addMember dataKey: " + DatatypeConverter.printBase64Binary(dataKeyByteArray));
 
         String backupLockingKeyString = "";
         String backupKeyString = "";
@@ -347,11 +347,12 @@ public class Member {
         SecretKey lockingKey = encryptor.getKey(password);
         
         // This string is stored in DB and XORed with password key to recover surrogate key
-        byte[] keyByteArray = encryptor.xorWithKey(surrogateKey.getEncoded(), lockingKey.getEncoded());
+        byte[] keyByteArray = encryptor.xorWithKey(dataKey.getEncoded(), lockingKey.getEncoded());
         String keyString = DatatypeConverter.printBase64Binary(keyByteArray);
         
         // check for recovery answer and initialize recoverable
         // if there is no answer, the password will not be recoverable
+        /*
         String answer = "";
         int recoverable = 0;
         if((recoveryAnswer != null) && (recoveryAnswer.length()>0)){
@@ -366,9 +367,11 @@ public class Member {
                     );
             backupKeyString = DatatypeConverter.printBase64Binary(backupByteArray);
         }
+        */
         
         // Encrypt and hash email
-        String encryptedMail = encryptor.encryptWithKey(mail, surrogateKey);
+        String encryptedMail = encryptor.encryptWithKey(mail, dataKey);
+        
         // Create hash of mail for lookup
         String hashedMail = String.valueOf(mail.hashCode());
 
@@ -389,7 +392,7 @@ public class Member {
 			ps.setString(3, hashedPassword);
 			ps.setString(4, keyString);
 			ps.setString(5, backupKeyString);
-            ps.setInt(6, recoverable);
+
 			System.out.println("Member-->PreparedStatementE: " + ps.toString());
 
 			ps.executeUpdate();
@@ -493,6 +496,98 @@ public class Member {
 		
 }
 
+	
+	public void updateBackupPassword(DataSource ds, String email, String password, String recovery){
+	    
+        Statement stmt = null;
+        PreparedStatement ps = null;
+        
+        String select = "SELECT stored_key from students WHERE email_hash = ?";
+        String storedKeyString = "";
+        
+        try{
+            conn = ds.getConnection();
+            stmt = conn.createStatement();
+            stmt.executeUpdate("USE teacher");
+            ps = conn.prepareStatement(select);
+            
+            ps.setString(1, String.valueOf(email.hashCode()));
+            System.out.println("Member-->PreparedStatement: " + ps.toString());
+
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()){
+                storedKeyString = rs.getString(1);
+            }
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            try {if (stmt != null) stmt.close();} catch (SQLException e) {}
+            try {if (ps != null) ps.close();} catch (SQLException e ) {}
+            try {if (conn != null) conn.close();} catch (SQLException e) {}
+        }
+        // obtain byte array from string
+        byte[] storedByteArray = DatatypeConverter.parseBase64Binary(storedKeyString);
+        
+        // Obtain locking key. This will be XORed with stored key to recover data key
+        SecretKey lockingKey = encryptor.getKey(password);
+        byte[] lockingByteArray = lockingKey.getEncoded();
+        
+        // This string is stored in DB and XORed with password key to recover surrogate key
+        byte[] dataKeyByteArray = encryptor.xorWithKey(storedByteArray, lockingByteArray);
+        SecretKey dataKey = new SecretKeySpec(dataKeyByteArray, 0, dataKeyByteArray.length, "AES");
+        
+        // generate recovery key and XOR with data key to obtain backupKey
+        // store backup Key and recoverable tag
+        int recoverable = 0;
+        String answer = "";
+        String backupKeyString = "";
+        if((recovery != null) && (recovery.length()>0)){
+            answer = recovery.toUpperCase();
+            byte[] recoveryByteArray = encryptor.getKey(answer).getEncoded();
+            recoverable = 1;
+
+            // XOR surrogate key with locking key to store as backup key
+            byte[] backupByteArray = encryptor.xorWithKey(
+                    dataKeyByteArray, 
+                    recoveryByteArray
+                    );
+            backupKeyString = DatatypeConverter.printBase64Binary(backupByteArray);
+        }
+        
+        //          MySQLのインサートクエリー
+        String ins1 = "UPDATE students SET backup_key = ?, recoverable = ? WHERE email = ?";
+
+        Statement stmt2 = null;
+        PreparedStatement ps2 = null;
+        
+        try{
+            conn = ds.getConnection();
+            stmt2 = conn.createStatement();
+            stmt2.executeUpdate("USE teacher");
+            ps2 = conn.prepareStatement(select);
+            
+            ps2.setString(1, String.valueOf(backupKeyString));
+            ps2.setString(2, String.valueOf(new Integer(1)));
+            ps2.setString(3, String.valueOf(email.hashCode()));
+            System.out.println("Member-->PreparedStatement: " + ps.toString());
+
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()){
+                storedKeyString = rs.getString(1);
+            }
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            try {if (stmt != null) stmt.close();} catch (SQLException e) {}
+            try {if (ps != null) ps.close();} catch (SQLException e ) {}
+            try {if (conn != null) conn.close();} catch (SQLException e) {}
+        }
+
+	}
 	
 	/*
 	 *  TODO encryption protocol needs to be updated to use surrogate key,

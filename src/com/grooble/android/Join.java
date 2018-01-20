@@ -85,7 +85,7 @@ public class Join extends HttpServlet{
             else {         
                 // Add new member
                 System.out.println(TAG + "adding member: email: " + mail + "; password: " + password);
-                m.addMember(ds, mail, password, recoveryAnswer);
+                m.addMember(ds, mail, password);
                 
                 // Check success of Join action. Verify and get current joined user.
                 Person checkedUser = m.verify(ds, mail, password);

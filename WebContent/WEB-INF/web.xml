@@ -165,6 +165,14 @@
     <url-pattern>/Complete.do</url-pattern>
   </servlet-mapping>
   <servlet>
+    <servlet-name>BackupPwd</servlet-name>
+    <servlet-class>com.grooble.android.AddBackup</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>BackupPwd</servlet-name>
+    <url-pattern>/Recovery.to</url-pattern>
+  </servlet-mapping>
+  <servlet>
     <servlet-name>RegUpdate</servlet-name>
     <servlet-class>com.grooble.android.RegUpdate</servlet-class>
   </servlet>

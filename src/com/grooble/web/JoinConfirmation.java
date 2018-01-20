@@ -51,9 +51,7 @@ public class JoinConfirmation extends HttpServlet {
 			signedUser = m.getConfirm(ds, confString, confCode);
 			session.setAttribute("password", signedUser.getPassword());
 			if (signedUser != null){
-			    // TODO implement recovery answer in web version
-			    String recovery = "recovery";
-				m.addMember(ds, signedUser.getEmail().toLowerCase(), signedUser.getPassword(), recovery);
+				m.addMember(ds, signedUser.getEmail().toLowerCase(), signedUser.getPassword());
 				signedUser = m.lookup(ds, signedUser.getEmail().toLowerCase());
 				if(signedUser != null){
 					m.deleteConfirm(ds, confString);
