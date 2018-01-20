@@ -62,6 +62,7 @@ public class Join extends HttpServlet{
         String recoveryAnswer = request.getParameter("recovery");
         
         // Set recovery answer for testing
+        // TODO get real recovery answer from parameters
         recoveryAnswer = "test answer";
         
         System.out.println(TAG + "email: " + mail + ", pwd: " + password);

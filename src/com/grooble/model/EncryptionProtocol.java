@@ -2,7 +2,6 @@ package com.grooble.model;
 
 import java.io.ByteArrayOutputStream;
 import java.security.AlgorithmParameters;
-import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
 
@@ -15,9 +14,11 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 
 public class EncryptionProtocol {
-    
-    private byte[] salt;
-    
+
+    private static final String SALT = "XwM1/8gFIX4OlHYJi7dknQ==";
+    // parse salt
+    private static byte[] salt = DatatypeConverter.parseBase64Binary(SALT);
+
     public String encryptWithKey(String str, SecretKey secret) {
         try {            
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -49,7 +50,6 @@ public class EncryptionProtocol {
             if (ciphertext.length < 48) {
                 return null;
             }
-            salt = Arrays.copyOfRange(ciphertext, 0, 16);
             byte[] iv = Arrays.copyOfRange(ciphertext, 16, 32);
             byte[] ct = Arrays.copyOfRange(ciphertext, 32, ciphertext.length);
             
@@ -69,11 +69,7 @@ public class EncryptionProtocol {
     
     // return encryption key
     public SecretKey getKey(String password){
-        try {
-            SecureRandom random = new SecureRandom();
-            salt = new byte[16];
-            random.nextBytes(salt);
-            
+        try {            
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
             // obtain secret key
             KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 256);

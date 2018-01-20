@@ -17,17 +17,11 @@ import javax.xml.bind.DatatypeConverter;
 public class SurrogateTest {
     
     private static final String SALT = "XwM1/8gFIX4OlHYJi7dknQ==";
-    private static final String alphanumeric =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            + "abcdefghijklmnopqrstuvwxyz"
-            + "1234567890"
-            + "!#$%&()+*<>?_-=^~|";
-
     private static String plainText = "I am the very model of a modern major general";
     private static String cipherText = "";
-    private static SecureRandom rnd = new SecureRandom();
 
     private static byte[] salt;
+    private static SecretKey dataKey;
 
     public static void main(String[] args) {
         // set salt
@@ -43,18 +37,17 @@ public class SurrogateTest {
         SecretKey passwordKey = getKey(password);
         System.out.println("passwordKey: " + DatatypeConverter.printBase64Binary(passwordKey.getEncoded()));
         
-        // Generate surrogate encryption key from random string
-        String rand = randomString(24);
-        SecretKey surrogateKey = getKey(rand);
-        byte[] surrogateByteArray = surrogateKey.getEncoded();
-        System.out.println("surrogate: " + DatatypeConverter.printBase64Binary(surrogateByteArray));
-        
+        // Generate encryption key "dataKey" from SecureRandom instance
+        byte[] dataKeyBytes = SecureRandom.getSeed(32);
+        dataKey = new SecretKeySpec(dataKeyBytes, 0, dataKeyBytes.length, "AES");
+        System.out.println("dataKey: " + DatatypeConverter.printBase64Binary(dataKeyBytes));
+
         // encrypt plainText
         System.out.println("text to encrypt: " + plainText);
-        cipherText = encryptWithKey(plainText, surrogateKey);
+        cipherText = encryptWithKey(plainText, dataKey);
 
-        // XOR surrogateKey with passwordKey to get storedKey
-        SecretKey storedKey = xorWithKey(surrogateKey, passwordKey);
+        // XOR dataKey with passwordKey to get storedKey
+        SecretKey storedKey = xorWithKey(dataKey, passwordKey);
         String storedKeyString = DatatypeConverter.printBase64Binary(storedKey.getEncoded());
         System.out.println("storedKey: "+ storedKeyString);
         
@@ -63,14 +56,14 @@ public class SurrogateTest {
         String storedKey2String = DatatypeConverter.printBase64Binary(storedKey2.getEncoded());
         System.out.println("storedKey->String->key->string: " + storedKey2String);
         
-        // recover surrogateKey from storedKey2
+        // recover dataKey from storedKey2
         SecretKey password2Key = getKey(password);
         System.out.println("password2Key: " + DatatypeConverter.printBase64Binary(password2Key.getEncoded()));
-        SecretKey surrogate2Key = xorWithKey(storedKey2, password2Key);
-        System.out.println("surrogate2 (recovered): " + DatatypeConverter.printBase64Binary(surrogate2Key.getEncoded()));
+        SecretKey data2Key = xorWithKey(storedKey2, password2Key);
+        System.out.println("data2 (recovered): " + DatatypeConverter.printBase64Binary(data2Key.getEncoded()));
         
         // decrypt text
-        String decryptedText = decryptWithKey(cipherText, surrogate2Key);
+        String decryptedText = decryptWithKey(cipherText, data2Key);
         System.out.println("decryptedText: " + decryptedText);
     }
     
@@ -84,13 +77,6 @@ public class SurrogateTest {
         return outKey;
     }
     
-    private static String randomString(int length){
-        StringBuilder sb = new StringBuilder(length);
-        for( int i = 0; i < length; i++ ) 
-           sb.append( alphanumeric.charAt( rnd.nextInt(alphanumeric.length()) ) );
-        return sb.toString();
-    }
-
     // return encryption key
     private static SecretKey getKey(String password){
         try {
@@ -155,5 +141,4 @@ public class SurrogateTest {
         }
         return null;
     }
-
 }
