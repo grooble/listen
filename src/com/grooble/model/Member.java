@@ -109,7 +109,7 @@ public class Member {
 //      MySQL クエリー
         String selectQry = 
             "SELECT email_hash " +
-            "FROM students WHERE (email_hash=?)";
+            "FROM students WHERE email_hash=?";
         
         try{
             conn = ds.getConnection();
@@ -165,13 +165,14 @@ public class Member {
 		    "firstname, " +
 			"lastname, " + 
 		    "email, " + 
-			"surrogate_key, " +
+			"stored_key, " +
 		    "profilepic, " +
 			"points, " +
 		    "tutorial, " +
 			"fcm_token " +
 			"FROM students WHERE (email_hash=?)";
 		Person person = new Person();
+		String storedKeyString = "";
 		
 		try{
 			conn = ds.getConnection();
@@ -181,6 +182,7 @@ public class Member {
 			ps.setString(1, hashedMail);
 			System.out.println(TAG + "verify->PStmt: " + ps.toString());
 			rs = ps.executeQuery();
+			
 			
 			if(!rs.next()){
 				person = null;
@@ -193,7 +195,7 @@ public class Member {
 					person.setFirstName(rs.getString(2));  // encrypted
 					person.setLastName(rs.getString(3));   // encrypted
 					person.setEmail(rs.getString(4));      // encrypted
-					person.setSurrogate(rs.getString(5));
+					storedKeyString = (rs.getString(5));
 					person.setPassword(password);   // use password that was passed to method
 					person.setProfilePic(rs.getString(6)); // url encrypted
 					person.setPoints(rs.getInt(7));        // not encrypted
@@ -227,7 +229,7 @@ public class Member {
 		    // and decrypt the returned person
 		    
 		    // get SecretKey
-		    SecretKey storedKey = encryptor.getKeyFromString(person.getSurrogate());
+		    SecretKey storedKey = encryptor.getKeyFromString(storedKeyString);
 		    byte[] storedByteArray = storedKey.getEncoded();
 		    byte[] passwordByteArray = encryptor.getKey(password).getEncoded();
 		    
@@ -340,34 +342,12 @@ public class Member {
         byte[] dataKeyByteArray = dataKey.getEncoded();
         System.out.println(TAG + "addMember dataKey: " + DatatypeConverter.printBase64Binary(dataKeyByteArray));
 
-        String backupLockingKeyString = "";
-        String backupKeyString = "";
-        
         // Obtain locking key. This will be XORed with surrogate key and stored
         SecretKey lockingKey = encryptor.getKey(password);
         
         // This string is stored in DB and XORed with password key to recover surrogate key
-        byte[] keyByteArray = encryptor.xorWithKey(dataKey.getEncoded(), lockingKey.getEncoded());
-        String keyString = DatatypeConverter.printBase64Binary(keyByteArray);
-        
-        // check for recovery answer and initialize recoverable
-        // if there is no answer, the password will not be recoverable
-        /*
-        String answer = "";
-        int recoverable = 0;
-        if((recoveryAnswer != null) && (recoveryAnswer.length()>0)){
-            answer = recoveryAnswer.toUpperCase();
-            byte[] backupLockingKeyByteArray = encryptor.getKey(answer).getEncoded();
-            recoverable = 1;
-
-            // XOR surrogate key with locking key to store as backup key
-            byte[] backupByteArray = encryptor.xorWithKey(
-                    surrogateByteArray, 
-                    backupLockingKeyByteArray
-                    );
-            backupKeyString = DatatypeConverter.printBase64Binary(backupByteArray);
-        }
-        */
+        byte[] storedKeyByteArray = encryptor.xorWithKey(dataKey.getEncoded(), lockingKey.getEncoded());
+        String storedKeyString = DatatypeConverter.printBase64Binary(storedKeyByteArray);
         
         // Encrypt and hash email
         String encryptedMail = encryptor.encryptWithKey(mail, dataKey);
@@ -377,8 +357,8 @@ public class Member {
 
 
 		//			MySQLのインサートクエリー
-		String ins1 = "INSERT INTO students(email, email_hash, password, tutorial, surrogate_key, backup_key, recoverable) " ;
-		String ins2 = "VALUES (?, ?, ?, 1, ?, ?, ?)";
+		String ins1 = "INSERT INTO students(email, email_hash, password, tutorial, stored_key) " ;
+		String ins2 = "VALUES (?, ?, ?, 1, ?)";
 		
 		try{
 			conn = ds.getConnection();
@@ -390,8 +370,7 @@ public class Member {
 			ps.setString(1, encryptedMail);
 			ps.setString(2, hashedMail);
 			ps.setString(3, hashedPassword);
-			ps.setString(4, keyString);
-			ps.setString(5, backupKeyString);
+			ps.setString(4, storedKeyString);
 
 			System.out.println("Member-->PreparedStatementE: " + ps.toString());
 
@@ -407,6 +386,7 @@ public class Member {
 		}		
 	}
 
+    
     // used to add person from pending table when confirmation email verified
 	public Person addMember(DataSource ds, 
 			String email, String firstname, String lastname, String fbid){
@@ -502,31 +482,8 @@ public class Member {
         Statement stmt = null;
         PreparedStatement ps = null;
         
-        String select = "SELECT stored_key from students WHERE email_hash = ?";
-        String storedKeyString = "";
+        String storedKeyString = getStoredKey(ds, email);
         
-        try{
-            conn = ds.getConnection();
-            stmt = conn.createStatement();
-            stmt.executeUpdate("USE teacher");
-            ps = conn.prepareStatement(select);
-            
-            ps.setString(1, String.valueOf(email.hashCode()));
-            System.out.println("Member-->PreparedStatement: " + ps.toString());
-
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()){
-                storedKeyString = rs.getString(1);
-            }
-        }
-        catch(Exception ex){
-            ex.printStackTrace();
-        }
-        finally {
-            try {if (stmt != null) stmt.close();} catch (SQLException e) {}
-            try {if (ps != null) ps.close();} catch (SQLException e ) {}
-            try {if (conn != null) conn.close();} catch (SQLException e) {}
-        }
         // obtain byte array from string
         byte[] storedByteArray = DatatypeConverter.parseBase64Binary(storedKeyString);
         
@@ -536,7 +493,6 @@ public class Member {
         
         // This string is stored in DB and XORed with password key to recover surrogate key
         byte[] dataKeyByteArray = encryptor.xorWithKey(storedByteArray, lockingByteArray);
-        SecretKey dataKey = new SecretKeySpec(dataKeyByteArray, 0, dataKeyByteArray.length, "AES");
         
         // generate recovery key and XOR with data key to obtain backupKey
         // store backup Key and recoverable tag
@@ -557,7 +513,7 @@ public class Member {
         }
         
         //          MySQLのインサートクエリー
-        String ins1 = "UPDATE students SET backup_key = ?, recoverable = ? WHERE email = ?";
+        String ins1 = "UPDATE students SET backup_key = ?, recoverable = ? WHERE email_hash = ?";
 
         Statement stmt2 = null;
         PreparedStatement ps2 = null;
@@ -566,17 +522,14 @@ public class Member {
             conn = ds.getConnection();
             stmt2 = conn.createStatement();
             stmt2.executeUpdate("USE teacher");
-            ps2 = conn.prepareStatement(select);
+            ps2 = conn.prepareStatement(ins1);
             
             ps2.setString(1, String.valueOf(backupKeyString));
-            ps2.setString(2, String.valueOf(new Integer(1)));
+            ps2.setInt(2, recoverable);
             ps2.setString(3, String.valueOf(email.hashCode()));
-            System.out.println("Member-->PreparedStatement: " + ps.toString());
+            System.out.println("Member-->PreparedStatement: " + ps2.toString());
 
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()){
-                storedKeyString = rs.getString(1);
-            }
+            ps2.executeUpdate();
         }
         catch(Exception ex){
             ex.printStackTrace();
@@ -633,7 +586,6 @@ public class Member {
  */
 	/*
 	 *  Edit name and other details
-	 *  TODO implement encryption
 	 */
 	public Person updateName(DataSource ds, Person person){
 		Statement stmt = null;
@@ -642,22 +594,16 @@ public class Member {
 		// get user parameters
 		String email = person.getEmail();
 		String password = person.getPassword();
-		String surrogate = person.getSurrogate();
 		String dob = person.getDOB();
 		String fname = person.getFirstName();
 		String lname = person.getLastName();
 		
 		Date myDate = null;
 
-		// parse dob to sqldate
-		java.sql.Date sqlDate = null;
 		String[] dateObjects;
 		if((dob != null) && (dob.length() > 0)){
 		    dateObjects = dob.split("/");
 		    if(dateObjects.length == 3){		        
-		        int month = Integer.parseInt(dateObjects[0]);
-		        int day = Integer.parseInt(dateObjects[1]);
-		        int year = Integer.parseInt(dateObjects[2]);
 		        String dateFormatString = "MM/dd/yy";
 		        SimpleDateFormat df = new SimpleDateFormat(dateFormatString);
 		        try {
@@ -665,11 +611,20 @@ public class Member {
 		        } catch (ParseException e) {
 		            e.printStackTrace();
 		        }
-		        sqlDate = new java.sql.Date(myDate.getTime());
 		    }
 		} 
 
-		SecretKey secret = encryptor.getKeyFromString(surrogate);
+		// get stored_key from database
+		String storedKeyString = getStoredKey(ds, email);
+		SecretKey storedKey = encryptor.getKeyFromString(storedKeyString);
+		
+		// get passwordKey
+		SecretKey passwordKey = encryptor.getKey(password);
+		
+		// obtain dataKey from XOR of storedKey and passwordKey 
+		byte[] dataKeyBytes = encryptor.xorWithKey(storedKey.getEncoded(), passwordKey.getEncoded());
+		SecretKey dataKey = new SecretKeySpec(dataKeyBytes, 0, dataKeyBytes.length, "AES");
+		
 		//			MySQLのインサートクエリー
 		// Check if dob is null, and if so, only update name
 		// otherwise update name and date of birth.
@@ -686,11 +641,11 @@ public class Member {
 		if(fname == null){fname = "";}
 		if(lname == null){lname = "";}
 		System.out.println(TAG + "addName->fname: " + fname + " lname: " + lname);
-		System.out.println(TAG + "addName->secret: " + DatatypeConverter.printBase64Binary(secret.getEncoded()));
+		System.out.println(TAG + "addName->secret: " + DatatypeConverter.printBase64Binary(dataKey.getEncoded()));
 
 		// encrypted first and last names
-		String cypherFirstName = encryptor.encryptWithKey(fname, secret);
-		String cypherLastName = encryptor.encryptWithKey(lname, secret);
+		String cypherFirstName = encryptor.encryptWithKey(fname, dataKey);
+		String cypherLastName = encryptor.encryptWithKey(lname, dataKey);
 		
 		try{
 			conn = ds.getConnection();
@@ -1066,13 +1021,12 @@ public class Member {
     private Person getDecryptedPerson(Person person, SecretKey secret){
         
         // Initialize fields that need to be decrypted
-        String email, firstName, lastName, dob, fbid, fcm, profilePic = null;
+        String email, firstName, lastName, dob, fbid, profilePic = null;
         email = person.getEmail();
         firstName = person.getFirstName();
         lastName = person.getLastName();
         dob = person.getDOB();
         fbid = person.getFbid();
-        fcm = person.getFcm_token();
         profilePic = person.getProfilePic();
         
         // Decrypt where the field is not null or empty
@@ -1104,6 +1058,42 @@ public class Member {
         for( int i = 0; i < length; i++ ) 
            sb.append( alphanumeric.charAt( rnd.nextInt(alphanumeric.length()) ) );
         return sb.toString();
+    }
+    
+    
+    /*
+     * Convenience method to return the stored_key for various other encryption operations
+     */
+    private String getStoredKey(DataSource ds, String email){
+        Statement stmt = null;
+        PreparedStatement ps = null;
+        
+        String select = "SELECT stored_key from students WHERE email_hash = ?";
+        String storedKeyString = "";
+        
+        try{
+            conn = ds.getConnection();
+            stmt = conn.createStatement();
+            stmt.executeUpdate("USE teacher");
+            ps = conn.prepareStatement(select);
+            
+            ps.setString(1, String.valueOf(email.hashCode()));
+            System.out.println("Member-->PreparedStatement: " + ps.toString());
+
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()){
+                storedKeyString = rs.getString(1);
+            }
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            try {if (stmt != null) stmt.close();} catch (SQLException e) {}
+            try {if (ps != null) ps.close();} catch (SQLException e ) {}
+            try {if (conn != null) conn.close();} catch (SQLException e) {}
+        }
+        return storedKeyString;
     }
 	
 }

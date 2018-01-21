@@ -2,7 +2,6 @@ package com.grooble.android;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -14,9 +13,6 @@ import javax.sql.DataSource;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import BCrypt.BCrypt;
-
-import com.grooble.model.EncryptionProtocol;
 import com.grooble.model.Member;
 import com.grooble.model.Person;
 //import com.grooble.android.Encrypter;
@@ -59,11 +55,6 @@ public class Join extends HttpServlet{
         // get clear email and password
         String mail = request.getParameter("email").toLowerCase();
         String password = request.getParameter("password");
-        String recoveryAnswer = request.getParameter("recovery");
-        
-        // Set recovery answer for testing
-        // TODO get real recovery answer from parameters
-        recoveryAnswer = "test answer";
         
         System.out.println(TAG + "email: " + mail + ", pwd: " + password);
                 
