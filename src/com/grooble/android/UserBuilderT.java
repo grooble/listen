@@ -20,7 +20,6 @@ public class UserBuilderT {
     private final static String TAG = "UserBuilderT";
     private final static int TEST_SIZE = 5;
     private Person user;
-    private String password;
     private DataSource datasource;
     private Member memberTools;
     private Friender friender;
@@ -28,9 +27,8 @@ public class UserBuilderT {
 
     public UserBuilderT(Person user, String password, DataSource datasource){
         this.user = user;
-        this.password = password;
         this.datasource = datasource;
-        this.memberTools = new Member();
+        this.memberTools = new Member(datasource);
         this.friender = new Friender();
     }
     
@@ -46,7 +44,7 @@ public class UserBuilderT {
         ArrayList<Integer> friendIds = (ArrayList<Integer>)friender.getFriends(datasource, userId);
         Iterator<Integer> i = friendIds.iterator();
         while (i.hasNext()){
-            Person foundFriend = memberTools.verify(datasource, (Integer)i.next());
+            Person foundFriend = memberTools.verify((Integer)i.next());
             friends.add(foundFriend);
         }
         
@@ -62,7 +60,7 @@ public class UserBuilderT {
             pending = new ArrayList<Person>();
             Iterator<Integer> it = pendingIds.iterator();
             while(it.hasNext()){
-                Person pendant = memberTools.verify(datasource, (Integer)it.next());
+                Person pendant = memberTools.verify((Integer)it.next());
                 pending.add(pendant);
             }
         }

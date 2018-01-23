@@ -66,18 +66,18 @@ public class LoginSetup extends HttpServlet {
 			dispatch = "ShowProfile.do";
 			
 			Friender fr = new Friender();
-			Member check = new Member();
+			Member check = new Member(datasource);
 			
 			// get current completed test count
 			int userId = user.getId();
-			tests = check.testCount(datasource, userId);
+			tests = check.testCount(userId);
 			
 			// get list of user friends
 			friends = new ArrayList<Person>();
 			ArrayList<Integer> friendIds = (ArrayList<Integer>)fr.getFriends(datasource, userId);
 			Iterator<Integer> i = friendIds.iterator();
 			while (i.hasNext()){
-				Person foundFriend = check.verify(datasource, (Integer)i.next());
+				Person foundFriend = check.verify((Integer)i.next());
 				friends.add(foundFriend);
 			}
 			
@@ -87,7 +87,7 @@ public class LoginSetup extends HttpServlet {
 				pending = new ArrayList<Person>();
 				Iterator<Integer> it = pendingIds.iterator();
 				while(it.hasNext()){
-					Person pendant = check.verify(datasource, (Integer)it.next());
+					Person pendant = check.verify((Integer)it.next());
 					pending.add(pendant);
 				}
 			}

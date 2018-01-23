@@ -49,8 +49,8 @@ public class ResetPassword extends HttpServlet {
 			System.out.println("ResetPassword-->confString: " + confString);
 			System.out.println("ResetPassword-->confCode: " + confCode);
 			
-			Member m = new Member();
-			p = m.getRecovery(ds, confString, confCode); 
+			Member m = new Member(ds);
+			p = m.getRecovery(confString, confCode); 
 			if(p != null){	
 				System.out.println("ResetPassword-->email: " + p.getEmail().toLowerCase());
 				session.setAttribute("user", p);

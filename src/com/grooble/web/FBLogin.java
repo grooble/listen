@@ -120,11 +120,11 @@ public class FBLogin extends HttpServlet {
 
         //login existing user, or if not found,
         //create a new user.
-        Member check = new Member();
+        Member check = new Member(datasource);
         Person user = null;
         // check for existing user with this fbid
         // TODO this login method currently not implemented
-        user = check.verifyFB(datasource, facebookId);
+        user = check.verifyFB(facebookId);
         
         // if a matching fbid found...
         if(user != null){			
@@ -146,7 +146,7 @@ public class FBLogin extends HttpServlet {
 		// Otherwise, create new account.
         }else { 
         	// first, check for member with same email
-        	user = check.lookup(datasource, email.toLowerCase());
+        	user = check.lookup(email.toLowerCase());
         	if (user != null){
         		up.setFbid(datasource, facebookId, email.toLowerCase());
     			String loginMsg = "fb account linked to existing account. /nemail: " 
@@ -157,7 +157,7 @@ public class FBLogin extends HttpServlet {
     		// user not found by fbid or email. create new.	
         	}else{ 
         		Person added = 
-        			check.addMember(datasource, email.toLowerCase(), firstName, lastName, facebookId);
+        			check.addMember(email.toLowerCase(), firstName, lastName, facebookId);
         		//Person added = check.verify(datasource, facebookId);
         		System.out.println("FBLogin->new added:" + added.toString());
         		if(added != null){

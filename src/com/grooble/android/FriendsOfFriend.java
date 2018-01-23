@@ -26,6 +26,7 @@ import com.grooble.model.Member;
 import com.grooble.model.Person;
 import com.grooble.model.Result;
 
+@SuppressWarnings("serial")
 public class FriendsOfFriend extends HttpServlet {
     
     private static final String TAG = "FriendsOfFriend::";
@@ -59,10 +60,10 @@ public class FriendsOfFriend extends HttpServlet {
         
         System.out.println(TAG + " email: " + email + ", pwd: " + password);
                 
-        Member member = new Member();
+        Member member = new Member(ds);
         
         // get user
-        user = member.verify(ds, email, password);
+        user = member.verify(email, password);
         if (user == null){return;}
         
         // get list of friends of friendid
@@ -70,7 +71,7 @@ public class FriendsOfFriend extends HttpServlet {
         List<Person> fofs = getFriendsOfFriend(friendId);
         
         // get list of friend results
-        Person friend = member.verify(ds, friendId);
+        Person friend = member.verify(friendId);
         List<Result> results = new UserBuilderT(friend, password, ds).fetchResults();
         
         JSONMaker jm = new JSONMaker();

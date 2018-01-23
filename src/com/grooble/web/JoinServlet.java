@@ -48,8 +48,8 @@ public class JoinServlet extends HttpServlet{
 		String code = "";
 		String mailText = "";
 		
-		Member m = new Member();
-		if(m.verify(ds, mail)){
+		Member m = new Member(ds);
+		if(m.verify(mail)){
 			String msg = "This email already in use. /nPlease log in.";
 			request.setAttribute("message", msg);
 			request.setAttribute("messageAlert", "#FFCC66");
@@ -63,7 +63,7 @@ public class JoinServlet extends HttpServlet{
 			
 			String hashed = BCrypt.hashpw(pwd, BCrypt.gensalt());
 			
-			m.setConfirm(ds, mail, hashed, id, code);
+			m.setConfirm(mail, hashed, id, code);
 			String subject = "account confirmation - no reply";
 			mailText = "Please click the link below to " +
 			"confirm your registration: \n\n" +

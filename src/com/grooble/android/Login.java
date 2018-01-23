@@ -78,12 +78,12 @@ public class Login extends HttpServlet {
  * Check by testing Person object for null email (found users will have the email set.)
  */
         // Lookup user with email and password
-        Member m = new Member();
+        Member m = new Member(datasource);
         MarkTest marker = new MarkTest(datasource);
         
         // retrive user
         // TODO it is very unlikely the hash will collide so we won't handle it yet
-        Person user = m.verify(datasource, mail, password);
+        Person user = m.verify(mail, password);
         
         // get UserBuilder instance to add friends, results etc.
         UserBuilderT builder = new UserBuilderT(user, password, datasource);

@@ -86,9 +86,9 @@ public class TestGrade extends HttpServlet {
 		Result added = marker.update(p, test); 
 		testId = added.getTestId();
 		
-		Member m = new Member();
+		Member m = new Member(ds);
 		Integer tests = new Integer(0);
-		tests = m.testCount(ds, p.getId());
+		tests = m.testCount(p.getId());
 		session.setAttribute("testCount", tests);
 		
 		// Set result to status

@@ -55,8 +55,8 @@ public class LoginServlet extends HttpServlet {
  * Check by testing for null email (found users will have the email set.)
  */
 		//lookup user with email and password
-		Member check = new Member();
-		Person user = check.verify(datasource, userAcct, pwd);
+		Member check = new Member(datasource);
+		Person user = check.verify(userAcct, pwd);
 		
 		if (user.getEmail() != null){
 			userType = "member";

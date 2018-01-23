@@ -11,16 +11,13 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import com.grooble.model.Member;
-import com.grooble.model.Person;
 //import com.grooble
 
 public class FriendUtils {
     
 	private Connection con = null;
-	private Person user;
-	
 	FriendUtils(DataSource ds, String email, String password){
-	    user = new Member().verify(ds, email, password);
+	    new Member(ds).verify(email, password);
 	}
 	
 	public int makeFriend(DataSource ds, int p1, int p2){

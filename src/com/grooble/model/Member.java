@@ -29,6 +29,7 @@ import BCrypt.BCrypt;
 */
 
 public class Member {
+    private DataSource ds;
 	private Connection conn;
 	private EncryptionProtocol encryptor = new EncryptionProtocol();
 	private static final String TAG = "Member ";
@@ -39,8 +40,13 @@ public class Member {
 	        + "!#$%&()+*<>?_-=^~|";
 	private static SecureRandom rnd = new SecureRandom();
 	
-	public Person verify(DataSource ds, 
-			Integer id){
+	
+	public Member(DataSource ds){
+	    this.ds = ds;
+	}
+	
+	
+	public Person verify(Integer id){
 		ResultSet rs = null;
 		Statement stmt = null;
 		PreparedStatement ps = null;
@@ -97,7 +103,7 @@ public class Member {
 	 * This method checks for a yes/no existence of an email in the database
 	 * no user is returned and hash table collisions not checked
 	 */
-    public boolean verify(DataSource ds, String mail){
+    public boolean verify(String mail){
         
         // Create hash of mail for lookup
         String hashedMail = String.valueOf(mail.hashCode());
@@ -138,7 +144,7 @@ public class Member {
     
     
     //TODO implement FB login
-    public Person verifyFB(DataSource ds, String fbid){
+    public Person verifyFB(String fbid){
         Person p = new Person();
         return p;
     }
@@ -149,7 +155,7 @@ public class Member {
 	 * Looks up user on the hashed_email field and 
 	 * may return more than one user if there is a hash table collision
 	 */
-	public Person verify(DataSource ds, String mail, String password){
+	public Person verify(String mail, String password){
 	    
         // Create hash of mail for lookup
         String hashedMail = String.valueOf(mail.hashCode());
@@ -253,14 +259,14 @@ public class Member {
 	
 	
 	// TODO create convenience method for use in getRecovery
-	private Person verifyWithHash(DataSource ds, String emailHash){
+	private Person verifyWithHash(String emailHash){
 	    Person p = new Person();
 	    return p;
 	}
 
     // This method is used in to lookup friends to get the id for friending
     // Returns only the id of the user (which is unencrypted).
-    public Person lookup(DataSource ds, String mail){
+    public Person lookup(String mail){
         
         // Create hash of mail for lookup
         String hashedMail = String.valueOf(mail.hashCode());
@@ -328,8 +334,7 @@ public class Member {
      * Create a secondary locking key from user privacy question,
      * XOR the surrogate key with the secondary locking key and store that as a backup key.
      */
-    public void addMember(DataSource ds, 
-								String mail, String password){
+    public void addMember(String mail, String password){
         Statement stmt = null;
 		PreparedStatement ps = null;
 		
@@ -388,8 +393,7 @@ public class Member {
 
     
     // used to add person from pending table when confirmation email verified
-	public Person addMember(DataSource ds, 
-			String email, String firstname, String lastname, String fbid){
+	public Person addMember(String email, String firstname, String lastname, String fbid){
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		
@@ -477,12 +481,12 @@ public class Member {
 }
 
 	
-	public void updateBackupPassword(DataSource ds, String email, String password, String recovery){
+	public void updateBackupPassword(String email, String password, String recovery){
 	    
         Statement stmt = null;
         PreparedStatement ps = null;
         
-        String storedKeyString = getStoredKey(ds, email);
+        String storedKeyString = getStoredKey(email);
         
         // obtain byte array from string
         byte[] storedByteArray = DatatypeConverter.parseBase64Binary(storedKeyString);
@@ -546,7 +550,7 @@ public class Member {
 	 *  TODO encryption protocol needs to be updated to use surrogate key,
 	 *  locking key and 2nd locking key to facilitate password recovery
 	 */
-	public Person updatePwd(DataSource ds, String email, String newPassword){
+	public Person updatePwd(String email, String newPassword){
 		
 		Statement stmt = null;
 		PreparedStatement ps = null;
@@ -577,7 +581,7 @@ public class Member {
 			try {if (ps != null) ps.close();} catch (SQLException e ) {}
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}		
-		Person p = this.verify(ds, email, newPassword);
+		Person p = this.verify(email, newPassword);
 		return p;
 	}
 
@@ -587,7 +591,7 @@ public class Member {
 	/*
 	 *  Edit name and other details
 	 */
-	public Person updateName(DataSource ds, Person person){
+	public Person updateName(Person person){
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		
@@ -615,7 +619,7 @@ public class Member {
 		} 
 
 		// get stored_key from database
-		String storedKeyString = getStoredKey(ds, email);
+		String storedKeyString = getStoredKey(email);
 		SecretKey storedKey = encryptor.getKeyFromString(storedKeyString);
 		
 		// get passwordKey
@@ -676,14 +680,86 @@ public class Member {
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}		
 
-		Person p = this.verify(ds, email, password);
+		Person p = this.verify(email, password);
 		System.out.println(TAG + "fname: " + p.getFirstName() + "; lname: " + p.getLastName());
         return p;
 	}
 	
 	
+	/*
+	 * Recover data key from backup Key and set new password
+	 */
+	public int resetPassword(String email, String newPassword, String recovery){
+	    int result = -1;
+	    String backupKeyString = "";
+	    
+	    // get email_hash and get backupKey
+	    String emailHash = String.valueOf(email.hashCode());
+        Statement stmt = null;
+        PreparedStatement ps = null;
+        String select = "SELECT backup_key FROM students WHERE email_hash=" + emailHash;
+        try{
+            conn = ds.getConnection();
+            stmt = conn.createStatement();
+            stmt.executeUpdate("USE teacher");
+            ps = conn.prepareStatement(select);
+            System.out.println("Member-->passwordStatement: " + ps.toString());
+
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()){
+                backupKeyString = rs.getString(1);
+            }
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            try {if (stmt != null) stmt.close();} catch (SQLException e) {}
+            try {if (ps != null) ps.close();} catch (SQLException e ) {}
+            try {if (conn != null) conn.close();} catch (SQLException e) {}
+        }       
+	    
+	    // recover dataKey from backup
+        SecretKey recoveryKey = encryptor.getKey(recovery);
+        byte[] backupBytes = DatatypeConverter.parseBase64Binary(backupKeyString);
+        byte[] dataKeyBytes = encryptor.xorWithKey(backupBytes, recoveryKey.getEncoded());
+        
+	    // get new storedKey from newPassword
+        SecretKey newPasswordKey = encryptor.getKey(newPassword);
+        byte[] storedKey = encryptor.xorWithKey(dataKeyBytes, newPasswordKey.getEncoded());
+        String storedKeyString = DatatypeConverter.printBase64Binary(storedKey);
+        
+	    // set storedKey to db and return success
+        Connection conn2 = null;
+        Statement stmt2 = null;
+        PreparedStatement ps2 = null;
+        String update = "UPDATE students SET stored_key=" + storedKeyString
+                + " WHERE email_hash=" + emailHash;
+
+        try{
+            conn2 = ds.getConnection();
+            stmt2 = conn2.createStatement();
+            stmt2.executeUpdate("USE teacher");
+            ps2 = conn2.prepareStatement(update);
+            System.out.println("Member-->reset pwd->update: " + ps2.toString());
+
+            // result will be 1 or 0 for success
+            result = ps2.executeUpdate();
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            try {if (stmt2 != null) stmt2.close();} catch (SQLException e) {}
+            try {if (ps2 != null) ps2.close();} catch (SQLException e ) {}
+            try {if (conn2 != null) conn2.close();} catch (SQLException e) {}
+        }       
+	    
+	    return result;
+	}
 	
-	public Integer testCount(DataSource ds, int id){
+	
+	public Integer testCount(int id){
 //	   System.out.println("testCount called");	
 	   Integer tCount = null;
 	   Statement stmt = null;
@@ -726,8 +802,7 @@ public class Member {
 	}
 
 	
-	public void setConfirm(DataSource ds, 
-			String email, String password, 
+	public void setConfirm(String email, String password, 
 			String code, String confPass){
 		
 		Statement stmt = null;
@@ -763,7 +838,7 @@ public class Member {
 	}
 	
 	
-	public void deleteConfirm(DataSource ds, String code){
+	public void deleteConfirm(String code){
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		//MySQL クエリー
@@ -791,7 +866,7 @@ public class Member {
 		}				
 	}
 	
-	public Person getConfirm(DataSource ds, String code, String confPass){
+	public Person getConfirm(String code, String confPass){
 
 		Person person = new Person();
 		
@@ -841,9 +916,7 @@ public class Member {
 	}
 	
 	//----------------------------------------
-	public void setRecovery(DataSource ds, 
-			String email, 
-			String code, String confPass){
+	public void setRecovery(String email, String code, String confPass){
 		
 		Statement stmt = null;
 		PreparedStatement ps = null;
@@ -879,7 +952,7 @@ public class Member {
 		}		
 	}
 	
-	public void deleteRecovery(DataSource ds, String email){
+	public void deleteRecovery(String email){
 		Statement stmt = null;
 		PreparedStatement ps = null;
 		//MySQL クエリー
@@ -911,7 +984,7 @@ public class Member {
 		}				
 	}
 	
-	public Person getRecovery(DataSource ds, String code, String confPass){
+	public Person getRecovery(String code, String confPass){
 		
 		Person p = null;
 		String emailHash = "";
@@ -951,7 +1024,7 @@ public class Member {
 			try {if (conn != null) conn.close();} catch (SQLException e) {}
 		}	
         
-		p = this.verifyWithHash(ds, emailHash);
+		p = this.verifyWithHash(emailHash);
         return p;
 	}
 	//----------------------------------------
@@ -959,7 +1032,7 @@ public class Member {
 	/*
      *  Update tutorial to show or not show on startup
      */
-    public boolean updateTutorial(DataSource ds, String email, String password, int tut){
+    public boolean updateTutorial(String email, String password, int tut){
         
         Statement stmt = null;
         PreparedStatement ps = null;
@@ -1064,7 +1137,7 @@ public class Member {
     /*
      * Convenience method to return the stored_key for various other encryption operations
      */
-    private String getStoredKey(DataSource ds, String email){
+    private String getStoredKey(String email){
         Statement stmt = null;
         PreparedStatement ps = null;
         

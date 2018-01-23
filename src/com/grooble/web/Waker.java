@@ -44,8 +44,8 @@ public class Waker extends HttpServlet {
 		System.out.println("Waker->parameters user:" + user + " password:" + pwd);
 
 		String userType = "";
-		Member check = new Member();
-		Person signedUser = check.verify(datasource, user, pwd);
+		Member check = new Member(datasource);
+		Person signedUser = check.verify(user, pwd);
 		
 		// verify user logged in and set attribute values
 		if (signedUser != null){

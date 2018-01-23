@@ -51,8 +51,8 @@ public class FriendViewer extends HttpServlet {
 		
 		System.out.println("FriendViewer-->friendId: " + friendId);
 
-		Member m = new Member();
-		Person friend = m.verify(datasource, friendId);
+		Member m = new Member(datasource);
+		Person friend = m.verify(friendId);
 		String msg = "";
 		String dispatch = "ShowProfile.do";
 
@@ -79,7 +79,7 @@ public class FriendViewer extends HttpServlet {
 			ArrayList<Integer> fOfFriendIds = (ArrayList<Integer>)fr.getFriends(datasource, friendId);
 			Iterator<Integer> i = fOfFriendIds.iterator();
 			while (i.hasNext()){
-				Person foundFriend = m.verify(datasource, (Integer)i.next());
+				Person foundFriend = m.verify((Integer)i.next());
 				fOfFriends.add(foundFriend);
 			}
 						

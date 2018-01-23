@@ -2,7 +2,6 @@ package com.grooble.android;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -12,13 +11,12 @@ import javax.sql.DataSource;
 
 import com.grooble.model.Friender;
 
+@SuppressWarnings("serial")
 public class DeleteFriend extends HttpServlet {
     
     private static final String TAG = "DeleteFriend";
     
     private DataSource ds;
-    private Connection con;
-
     private int user; 
     private int friend;
         

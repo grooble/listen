@@ -48,11 +48,11 @@ public class PwdEntry extends HttpServlet {
 		// PWD CHANGE PAGE IF NOT
 		String dispatch = "";
 		Person user = (Person)session.getAttribute("user");
-		Member m = new Member();
+		Member m = new Member(ds);
 		if (user == null){
 			System.out.println("PwdEntry-->user null. Getting user from email.");
 			String email = (String)session.getAttribute("userMail");
-			user = m.verify(ds, email, password);
+			user = m.verify(email, password);
 			if (!(user instanceof Person)){
 				System.out.println("PwdEntry-->User not found. Returning to index-06.jsp.");
 				request.setAttribute("message", "エラー：ユーザー不明。");
@@ -61,8 +61,8 @@ public class PwdEntry extends HttpServlet {
 			}
 		}
 		System.out.println("PwdEntry-->user loaded and about to reset pwd.");
-		user = m.updatePwd(ds, user.getEmail(), password1);
-		m.deleteRecovery(ds, user.getEmail());
+		user = m.updatePwd(user.getEmail(), password1);
+		m.deleteRecovery(user.getEmail());
 		session.setAttribute("user", user);
 		request.setAttribute("message", "パスワード更新しました。"); 
 		dispatch = "Setup.do";

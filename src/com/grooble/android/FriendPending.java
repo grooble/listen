@@ -2,7 +2,6 @@ package com.grooble.android;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -16,12 +15,12 @@ import org.json.JSONObject;
 import com.grooble.model.Member;
 import com.grooble.model.Person;
 
+@SuppressWarnings("serial")
 public class FriendPending extends HttpServlet {
     
     private static final String TAG = "FriendPending: ";
     
     private DataSource ds;
-    private Connection con;
     private String email;
     private String password;
     private int pendingId;
@@ -50,10 +49,10 @@ public class FriendPending extends HttpServlet {
         
         System.out.println(TAG + "email: " + email + ", pwd: " + password + ", pendingId: " + String.valueOf(pendingId));
         
-        Member member = new Member();
+        Member member = new Member(ds);
         
         // get user
-        user = member.verify(ds, email, password);
+        user = member.verify(email, password);
         if (user == null){return;}
 
         /*

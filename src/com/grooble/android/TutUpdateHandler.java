@@ -14,7 +14,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.grooble.model.Member;
-import com.grooble.model.Person;
 
 @SuppressWarnings("serial")
 public class TutUpdateHandler extends HttpServlet {
@@ -59,8 +58,8 @@ public class TutUpdateHandler extends HttpServlet {
         }
 
         // get Member instance and update tutorialStatus to DB
-        Member m = new Member();
-        boolean updated = m.updateTutorial(ds, email, password, tutorialStatus);
+        Member m = new Member(ds);
+        boolean updated = m.updateTutorial(email, password, tutorialStatus);
         response.setContentType("text/html");
         JSONObject job = new JSONObject();
         try {

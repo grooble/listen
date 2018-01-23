@@ -17,6 +17,7 @@ import com.grooble.model.Member;
 import com.grooble.model.Person;
 import com.grooble.model.Update;
 
+@SuppressWarnings("serial")
 public class RegUpdate extends HttpServlet {
     
     private DataSource ds;
@@ -53,7 +54,7 @@ public class RegUpdate extends HttpServlet {
         System.out.println(TAG + " got login params...email: " + email);
         
         // verify login credentials
-        Person user = new Member().verify(ds, email, password);
+        Person user = new Member(ds).verify(email, password);
         
         //JSONObject for the response
         JSONObject responseJSON = new JSONObject();

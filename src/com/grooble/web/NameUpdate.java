@@ -1,9 +1,6 @@
 package com.grooble.web;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -55,8 +52,8 @@ public class NameUpdate extends HttpServlet {
 		p.setEmail(email);
 		p.setPassword(password);
 		
-		Member m = new Member();
-		p = m.updateName(ds, p);
+		Member m = new Member(ds);
+		p = m.updateName(p);
 		
 		session.setAttribute("user", p);
 		

@@ -65,7 +65,7 @@ public class ImageHandler extends HttpServlet {
         boolean fileFound = false;
 
         // Initialize Member for later user lookup
-        Member member = new Member();
+        Member member = new Member(datasource);
 
         // get realPath
         realPath = getServletContext().getRealPath("/");
@@ -108,7 +108,7 @@ public class ImageHandler extends HttpServlet {
                     ((password != null) && (!password.isEmpty()))
                ){
                 System.out.println(TAG + "...email: " + email + ", pwd: " + password);
-                user = member.verify(datasource, email.toLowerCase(), password);
+                user = member.verify(email.toLowerCase(), password);
                 
                 // if user is not null, get image and save
                 if(user != null){

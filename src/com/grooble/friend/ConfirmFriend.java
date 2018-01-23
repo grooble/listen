@@ -60,11 +60,11 @@ public class ConfirmFriend extends HttpServlet {
 			user = (Person)userObj;
 		}
 		
-		Member m = new Member();
+		Member m = new Member(datasource);
 		Friender f = new Friender();
 		
 		Person friend = new Person();
-		friend = (Person)m.lookup(datasource, email); 
+		friend = (Person)m.lookup(email); 
 		
 		// Accept request for friend.
 		// Delete pended request from database (b/c friend accepted and

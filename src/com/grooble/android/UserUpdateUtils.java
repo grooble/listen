@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import com.grooble.model.Member;
 import com.grooble.model.Person;
 
+@SuppressWarnings("serial")
 public class UserUpdateUtils extends HttpServlet {
     
     private DataSource ds;
@@ -51,9 +52,9 @@ public class UserUpdateUtils extends HttpServlet {
         System.out.println(TAG + " got params...fname: " + fname + ", lname: " + lname);
         System.out.println(TAG + " got login params...email: " + email + ", pwd: " + password);
         
-        Member member = new Member();
+        Member member = new Member(ds);
         JSONObject outJSON = new JSONObject();
-        Person user = member.verify(ds, email, password);
+        Person user = member.verify(email, password);
         
         
         if(user != null){
@@ -72,7 +73,7 @@ public class UserUpdateUtils extends HttpServlet {
                 user.setLastName("");
             }
 
-            Person updatedUser = member.updateName(ds, user);
+            Person updatedUser = member.updateName(user);
             
             try {
                 outJSON.put("user", updatedUser.getJSONObject());

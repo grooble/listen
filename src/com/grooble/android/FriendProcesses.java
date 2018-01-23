@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import com.grooble.model.Member;
 import com.grooble.model.Person;
 
+@SuppressWarnings("serial")
 public class FriendProcesses extends HttpServlet {
     
     private static final String TAG = "FriendProcesses ";
@@ -78,10 +79,10 @@ public class FriendProcesses extends HttpServlet {
         }
 
         // Initialize Member instance for functions to add pending and invited users
-        Member member = new Member();
+        Member member = new Member(ds);
         
         // get user
-        user = member.verify(ds, email, password);
+        user = member.verify(email, password);
         if (user == null){return;}
         
         // get userids from emails 

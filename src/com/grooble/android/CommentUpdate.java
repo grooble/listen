@@ -75,10 +75,10 @@ public class CommentUpdate extends HttpServlet {
                 + statusType + ", " 
                 + parent + ", ");
         
-        Member memberTools = new Member();
+        Member memberTools = new Member(ds);
         JSONMaker jMaker = new JSONMaker();
         
-        Person user = (Person) memberTools.verify(ds, email, password);
+        Person user = (Person) memberTools.verify(email, password);
         System.out.println(TAG + "-->user: " + user.getFirstName());
         
         // check for empty status and if not empty

@@ -133,8 +133,8 @@ public class UploadHandler extends HttpServlet {
 								"/images/" + fileName;
 			System.out.println("UploadHandler->picString: " + picString);
 			up.updater(datasource, email, picString);
-			Member m = new Member();
-			user = m.lookup(datasource, email);			
+			Member m = new Member(datasource);
+			user = m.lookup(email);			
 		}
 		
 		// create RequestDispatcher	

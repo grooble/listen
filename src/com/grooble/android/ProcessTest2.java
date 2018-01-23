@@ -93,7 +93,7 @@ public class ProcessTest2 extends HttpServlet {
         
         
         // get user
-        Person user = new Member().verify(ds, email, password);
+        Person user = new Member(ds).verify(email, password);
         System.out.println(TAG + "user_email,points: " + user.getEmail() + ", " + user.getPoints());
         
         // convert parameter strings to int arrays

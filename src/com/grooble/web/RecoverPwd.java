@@ -42,9 +42,9 @@ public class RecoverPwd extends HttpServlet {
 		String code = "";
 		String mailText = "";
 		
-		Member member = new Member();
+		Member member = new Member(datasource);
 		// TODO this lookup only returns a person with the user id!
-		Person p = member.lookup(datasource, email);
+		Person p = member.lookup(email);
 		if (p != null){
 			
 			String id = UUID.randomUUID().toString();
@@ -66,7 +66,7 @@ public class RecoverPwd extends HttpServlet {
 				e.printStackTrace();
 				System.out.println("RecoverPwd->: in JMailer catch");
 			}
-			member.setRecovery(datasource, email, id, code);
+			member.setRecovery(email, id, code);
 			
 			request.setAttribute("message", "パスワード設定リンクをメールに送ろました。");
 		}

@@ -100,7 +100,7 @@ public class ProcessTest extends HttpServlet {
         
         
         // get user
-        Person user = new Member().verify(ds, email, password);
+        Person user = new Member(ds).verify(email, password);
         if (user != null){
             System.out.println("ProcessTest-->user email: " + user.getEmail());
         }

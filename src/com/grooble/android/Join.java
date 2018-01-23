@@ -65,8 +65,8 @@ public class Join extends HttpServlet{
             JSONContainer = new JSONObject();
                         
             // Check if email belongs to existing member
-            Member m = new Member();
-            if(m.verify(ds, mail)){ // true means an existing user has this email so cannot create account
+            Member m = new Member(ds);
+            if(m.verify(mail)){ // true means an existing user has this email so cannot create account
                 try {
                     JSONContainer.put("error", "email associated with existing account");
                 } catch (JSONException e) {
@@ -76,10 +76,10 @@ public class Join extends HttpServlet{
             else {         
                 // Add new member
                 System.out.println(TAG + "adding member: email: " + mail + "; password: " + password);
-                m.addMember(ds, mail, password);
+                m.addMember(mail, password);
                 
                 // Check success of Join action. Verify and get current joined user.
-                Person checkedUser = m.verify(ds, mail, password);
+                Person checkedUser = m.verify(mail, password);
                 if (null == checkedUser){
                     try {
                         JSONContainer.put("error", "an error ocurred. user not added.");

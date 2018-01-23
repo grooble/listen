@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import com.grooble.model.Member;
 import com.grooble.model.Person;
 
+@SuppressWarnings("serial")
 public class TestIdFetcher extends HttpServlet {
     
     private static final String TAG = "TestIdFetcher: ";
@@ -51,8 +52,8 @@ public class TestIdFetcher extends HttpServlet {
         int nextTestId = 0;
         
         // Get user
-        Member member = new Member();
-        user = member.verify(ds, email, password);
+        Member member = new Member(ds);
+        user = member.verify(email, password);
         if (user == null){return;}
         else{
             nextTestId = getTestId(user.getId());

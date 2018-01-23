@@ -2,7 +2,6 @@ package com.grooble.android;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -13,13 +12,12 @@ import javax.sql.DataSource;
 import com.grooble.model.Member;
 import com.grooble.model.Person;
 
+@SuppressWarnings("serial")
 public class DeleteStatus extends HttpServlet {
     
     private static final String TAG = "DeleteStatus";
     
     private DataSource ds;
-    private Connection con;
-
     private int deleted; 
         
     public void init() throws ServletException {
@@ -42,7 +40,7 @@ public class DeleteStatus extends HttpServlet {
         System.out.println(TAG + "got email: " + email);
         int statusId = Integer.parseInt(statusIdString);
         
-        Person user = new Member().verify(ds, email, password);
+        Person user = new Member(ds).verify(email, password);
 
         if(user != null){
             deleted = new StatusHandler().deleteStatus(ds, statusId);

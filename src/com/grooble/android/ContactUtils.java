@@ -20,6 +20,7 @@ import javax.sql.DataSource;
 import com.grooble.model.Member;
 import com.grooble.model.Person;
 
+@SuppressWarnings("serial")
 public class ContactUtils extends HttpServlet {
     
     private static final String TAG = "ContactUtils ";
@@ -49,10 +50,10 @@ public class ContactUtils extends HttpServlet {
         String password = request.getParameter("password");
         
         // Get user
-        Member member = new Member();
+        Member member = new Member(ds);
         
         // Obtain hash of email to verify user
-        user = member.verify(ds, email, password);
+        user = member.verify(email, password);
         if (user == null){return;}
         
         // Split on space and create ArrayList

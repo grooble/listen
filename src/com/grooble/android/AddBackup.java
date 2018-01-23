@@ -13,7 +13,7 @@ import com.grooble.model.Member;
 
 @SuppressWarnings("serial")
 public class AddBackup extends HttpServlet{
-    private static final String TAG = "Join ";
+    //private static final String TAG = "Join ";
     private DataSource ds;
     private String encoding;
     // private JSONObject JSONUser, JSONContainer;
@@ -45,8 +45,8 @@ public class AddBackup extends HttpServlet{
                ((password != null) && (password.length() > 0)) &&
                ((recovery != null) && (recovery.length() > 0))
            ){
-            Member m = new Member();
-            m.updateBackupPassword(ds, email, password, recovery);
+            Member m = new Member(ds);
+            m.updateBackupPassword(email, password, recovery);
         }
     }
 

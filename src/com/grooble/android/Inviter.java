@@ -50,12 +50,12 @@ public class Inviter extends HttpServlet {
 	   
 	   String returnMessage = "fail";
 	   
-	   Member member = new Member();
-	   user = member.verify(ds, userEmail, password);
-	   if(member.verify(ds, emailToInvite)){
+	   Member member = new Member(ds);
+	   user = member.verify(userEmail, password);
+	   if(member.verify(emailToInvite)){
 
 	       // email to invite is a user
-	       Person personToInvite = member.lookup(ds, emailToInvite);
+	       Person personToInvite = member.lookup(emailToInvite);
 
 	       // check if they are an existing friend...
 	       Friender friender = new Friender();	       
@@ -66,9 +66,9 @@ public class Inviter extends HttpServlet {
 	       else{
 	           // not existing friend and not null: set invite
 	           if((userEmail != null) && (password != null)){
-	               Person user = member.verify(ds, userEmail, password);
+	               Person user = member.verify(userEmail, password);
 	               if(user != null){
-	                   Person invitee = member.lookup(ds, emailToInvite);
+	                   Person invitee = member.lookup(emailToInvite);
 	                   int invitedStatus = friender.addToPending(ds, user.getId(), invitee.getId());
 	                   // -1 from Friender indicates failure
 	                   if (invitedStatus != -1){
