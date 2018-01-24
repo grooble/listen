@@ -209,6 +209,14 @@
     <url-pattern>/ReviewTest.do</url-pattern>
   </servlet-mapping>
   <servlet>
+    <servlet-name>PwdRecovery</servlet-name>
+    <servlet-class>com.grooble.android.PasswordRecovery</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>PwdRecovery</servlet-name>
+    <url-pattern>/RecoverPwd.to</url-pattern>
+  </servlet-mapping>
+  <servlet>
     <servlet-name>Grader</servlet-name>
     <servlet-class>com.grooble.web.TestGrade</servlet-class>
     <load-on-startup>3</load-on-startup>
