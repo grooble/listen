@@ -697,7 +697,7 @@ public class Member {
 	    String emailHash = String.valueOf(email.hashCode());
         Statement stmt = null;
         PreparedStatement ps = null;
-        String select = "SELECT backup_key FROM students WHERE email_hash=" + emailHash;
+        String select = "SELECT backup_key FROM students WHERE email_hash = '" + emailHash + "'";
         try{
             conn = ds.getConnection();
             stmt = conn.createStatement();
@@ -720,7 +720,7 @@ public class Member {
         }       
 	    
 	    // recover dataKey from backup
-        SecretKey recoveryKey = encryptor.getKey(recovery);
+        SecretKey recoveryKey = encryptor.getKey(recovery.toUpperCase());
         byte[] backupBytes = DatatypeConverter.parseBase64Binary(backupKeyString);
         byte[] dataKeyBytes = encryptor.xorWithKey(backupBytes, recoveryKey.getEncoded());
         
@@ -733,8 +733,8 @@ public class Member {
         Connection conn2 = null;
         Statement stmt2 = null;
         PreparedStatement ps2 = null;
-        String update = "UPDATE students SET stored_key=" + storedKeyString
-                + " WHERE email_hash=" + emailHash;
+        String update = "UPDATE students SET stored_key = '" + storedKeyString
+                + "' WHERE email_hash = '" + emailHash +"'";
 
         try{
             conn2 = ds.getConnection();
