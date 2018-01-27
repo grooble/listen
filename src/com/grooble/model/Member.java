@@ -481,59 +481,29 @@ public class Member {
 }
 
 	
+	/*
+	 * Set the backup password to the DB from the recovery question
+	 */
 	public void updateBackupPassword(String email, String password, String recovery){
-	    
+	            
+        String storedKeyString = "";
+        
+        // obtain stored key
+        String emailHash = String.valueOf(email.hashCode());
         Statement stmt = null;
         PreparedStatement ps = null;
-        
-        String storedKeyString = getStoredKey(email);
-        
-        // obtain byte array from string
-        byte[] storedByteArray = DatatypeConverter.parseBase64Binary(storedKeyString);
-        
-        // Obtain locking key. This will be XORed with stored key to recover data key
-        SecretKey lockingKey = encryptor.getKey(password);
-        byte[] lockingByteArray = lockingKey.getEncoded();
-        
-        // This string is stored in DB and XORed with password key to recover surrogate key
-        byte[] dataKeyByteArray = encryptor.xorWithKey(storedByteArray, lockingByteArray);
-        
-        // generate recovery key and XOR with data key to obtain backupKey
-        // store backup Key and recoverable tag
-        int recoverable = 0;
-        String answer = "";
-        String backupKeyString = "";
-        if((recovery != null) && (recovery.length()>0)){
-            answer = recovery.toUpperCase();
-            byte[] recoveryByteArray = encryptor.getKey(answer).getEncoded();
-            recoverable = 1;
-
-            // XOR surrogate key with locking key to store as backup key
-            byte[] backupByteArray = encryptor.xorWithKey(
-                    dataKeyByteArray, 
-                    recoveryByteArray
-                    );
-            backupKeyString = DatatypeConverter.printBase64Binary(backupByteArray);
-        }
-        
-        //          MySQLのインサートクエリー
-        String ins1 = "UPDATE students SET backup_key = ?, recoverable = ? WHERE email_hash = ?";
-
-        Statement stmt2 = null;
-        PreparedStatement ps2 = null;
-        
+        String select = "SELECT stored_key FROM students WHERE email_hash = '" + emailHash + "'";
         try{
             conn = ds.getConnection();
-            stmt2 = conn.createStatement();
-            stmt2.executeUpdate("USE teacher");
-            ps2 = conn.prepareStatement(ins1);
-            
-            ps2.setString(1, String.valueOf(backupKeyString));
-            ps2.setInt(2, recoverable);
-            ps2.setString(3, String.valueOf(email.hashCode()));
-            System.out.println("Member-->PreparedStatement: " + ps2.toString());
+            stmt = conn.createStatement();
+            stmt.executeUpdate("USE teacher");
+            ps = conn.prepareStatement(select);
+            System.out.println("Member-->storedSelect: " + ps.toString());
 
-            ps2.executeUpdate();
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()){
+                storedKeyString = rs.getString(1);
+            }
         }
         catch(Exception ex){
             ex.printStackTrace();
@@ -542,10 +512,48 @@ public class Member {
             try {if (stmt != null) stmt.close();} catch (SQLException e) {}
             try {if (ps != null) ps.close();} catch (SQLException e ) {}
             try {if (conn != null) conn.close();} catch (SQLException e) {}
-        }
+        }       
+        
+        // get data key from stored key with password key XOR
+        SecretKey passwordKey = encryptor.getKey(password);
+        byte[] storedBytes = DatatypeConverter.parseBase64Binary(storedKeyString);
+        byte[] dataKeyBytes = encryptor.xorWithKey(storedBytes, passwordKey.getEncoded());
+        
+        // XOR data key with recovery to get backup key
+        SecretKey recoveryKey = encryptor.getKey(recovery.toUpperCase());
+        byte[] backupKeyBytes = encryptor.xorWithKey(dataKeyBytes, recoveryKey.getEncoded());
+        String backupKeyString = DatatypeConverter.printBase64Binary(backupKeyBytes);
+        
 
-	}
+        // store backup key in database
+        Connection conn2 = null;
+        Statement stmt2 = null;
+        PreparedStatement ps2 = null;
+        String update = "UPDATE students SET backup_key = '" + backupKeyString
+                + "' WHERE email_hash = '" + emailHash +"'";
+
+        try{
+            conn2 = ds.getConnection();
+            stmt2 = conn2.createStatement();
+            stmt2.executeUpdate("USE teacher");
+            ps2 = conn2.prepareStatement(update);
+            System.out.println("Member-->set backup: " + ps2.toString());
+
+            // result will be 1 or 0 for success
+            ps2.executeUpdate();
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            try {if (stmt2 != null) stmt2.close();} catch (SQLException e) {}
+            try {if (ps2 != null) ps2.close();} catch (SQLException e ) {}
+            try {if (conn2 != null) conn2.close();} catch (SQLException e) {}
+        }       
+        
+    }
 	
+
 	/*
 	 *  TODO encryption protocol needs to be updated to use surrogate key,
 	 *  locking key and 2nd locking key to facilitate password recovery
@@ -726,14 +734,18 @@ public class Member {
         
 	    // get new storedKey from newPassword
         SecretKey newPasswordKey = encryptor.getKey(newPassword);
-        byte[] storedKey = encryptor.xorWithKey(dataKeyBytes, newPasswordKey.getEncoded());
-        String storedKeyString = DatatypeConverter.printBase64Binary(storedKey);
+        byte[] storedKeyBytes = encryptor.xorWithKey(dataKeyBytes, newPasswordKey.getEncoded());
+        String storedKeyString = DatatypeConverter.printBase64Binary(storedKeyBytes);
         
-	    // set storedKey to db and return success
+        // get password hash to update password
+        String hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+
+	    // set storedKey and password to db and return success
         Connection conn2 = null;
         Statement stmt2 = null;
         PreparedStatement ps2 = null;
         String update = "UPDATE students SET stored_key = '" + storedKeyString
+                + "', password = '" + hashedPassword
                 + "' WHERE email_hash = '" + emailHash +"'";
 
         try{
