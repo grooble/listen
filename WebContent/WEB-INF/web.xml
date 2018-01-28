@@ -15,16 +15,12 @@
     <param-value>UTF-8</param-value>
   </context-param>
   <context-param>
-    <param-name>SALT</param-name>
-    <param-value>XwM1/8gFIX4OlHYJi7dknQ==</param-value>
-  </context-param>
-  <context-param>
     <param-name>EMAIL_CONTACT</param-name>
     <param-value>grooble@gmail.com</param-value>
   </context-param>
   <context-param>
     <param-name>ANDROID_VERSION</param-name>
-    <param-value>107</param-value>
+    <param-value>108</param-value>
   </context-param>
   <welcome-file-list>
     <welcome-file>index.html</welcome-file>

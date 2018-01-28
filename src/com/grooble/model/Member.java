@@ -516,15 +516,22 @@ public class Member {
         
         // get data key from stored key with password key XOR
         SecretKey passwordKey = encryptor.getKey(password);
+        byte[] passwordBytes = passwordKey.getEncoded();
+        System.out.println(TAG + "setBackup->passwordKey: " + DatatypeConverter.printBase64Binary(passwordBytes));
         byte[] storedBytes = DatatypeConverter.parseBase64Binary(storedKeyString);
-        byte[] dataKeyBytes = encryptor.xorWithKey(storedBytes, passwordKey.getEncoded());
+        byte[] dataKeyBytes = encryptor.xorWithKey(storedBytes, passwordBytes);
+        System.out.println(TAG + "setBackup->dataKey: " + DatatypeConverter.printBase64Binary(dataKeyBytes));
         
         // XOR data key with recovery to get backup key
+        System.out.println(TAG + "setBackup->recovery String: " + recovery.toUpperCase());
         SecretKey recoveryKey = encryptor.getKey(recovery.toUpperCase());
+        byte[] recoveryBytes = recoveryKey.getEncoded();
+        System.out.println(TAG + "setBackup->recoveryKey: " + DatatypeConverter.printBase64Binary(recoveryBytes));
         byte[] backupKeyBytes = encryptor.xorWithKey(dataKeyBytes, recoveryKey.getEncoded());
         String backupKeyString = DatatypeConverter.printBase64Binary(backupKeyBytes);
+        System.out.println(TAG + "setBackup->backupKey: " + backupKeyString);
         
-
+        
         // store backup key in database
         Connection conn2 = null;
         Statement stmt2 = null;
@@ -555,149 +562,9 @@ public class Member {
 	
 
 	/*
-	 *  TODO encryption protocol needs to be updated to use surrogate key,
-	 *  locking key and 2nd locking key to facilitate password recovery
+	 * Recover dataKey from backupKey and set new password hash
 	 */
-	public Person updatePwd(String email, String newPassword){
-		
-		Statement stmt = null;
-		PreparedStatement ps = null;
-		
-		//			MySQLのインサートクエリー
-		String update = "UPDATE students SET password=? WHERE email_hash=?";
-	    String pwd1Hash = BCrypt.hashpw(newPassword, BCrypt.gensalt());
-	    String emailHash = String.valueOf(email.hashCode());
-
-
-		try{
-			conn = ds.getConnection();
-			stmt = conn.createStatement();
-			stmt.executeUpdate("USE teacher");
-			String insertQry = update;
-			ps = conn.prepareStatement(insertQry);
-			ps.setString(1, pwd1Hash);
-			ps.setString(2, emailHash);
-			System.out.println("Member-->PreparedStatementH: " + ps.toString());
-
-			ps.executeUpdate();
-		}
-		catch(Exception ex){
-			ex.printStackTrace();
-		}
-		finally {
-			try {if (stmt != null) stmt.close();} catch (SQLException e) {}
-			try {if (ps != null) ps.close();} catch (SQLException e ) {}
-			try {if (conn != null) conn.close();} catch (SQLException e) {}
-		}		
-		Person p = this.verify(email, newPassword);
-		return p;
-	}
-
-/*
- * *************
- */
-	/*
-	 *  Edit name and other details
-	 */
-	public Person updateName(Person person){
-		Statement stmt = null;
-		PreparedStatement ps = null;
-		
-		// get user parameters
-		String email = person.getEmail();
-		String password = person.getPassword();
-		String dob = person.getDOB();
-		String fname = person.getFirstName();
-		String lname = person.getLastName();
-		
-		Date myDate = null;
-
-		String[] dateObjects;
-		if((dob != null) && (dob.length() > 0)){
-		    dateObjects = dob.split("/");
-		    if(dateObjects.length == 3){		        
-		        String dateFormatString = "MM/dd/yy";
-		        SimpleDateFormat df = new SimpleDateFormat(dateFormatString);
-		        try {
-		            myDate = (Date) df.parse(dob);
-		        } catch (ParseException e) {
-		            e.printStackTrace();
-		        }
-		    }
-		} 
-
-		// get stored_key from database
-		String storedKeyString = getStoredKey(email);
-		SecretKey storedKey = encryptor.getKeyFromString(storedKeyString);
-		
-		// get passwordKey
-		SecretKey passwordKey = encryptor.getKey(password);
-		
-		// obtain dataKey from XOR of storedKey and passwordKey 
-		byte[] dataKeyBytes = encryptor.xorWithKey(storedKey.getEncoded(), passwordKey.getEncoded());
-		SecretKey dataKey = new SecretKeySpec(dataKeyBytes, 0, dataKeyBytes.length, "AES");
-		
-		//			MySQLのインサートクエリー
-		// Check if dob is null, and if so, only update name
-		// otherwise update name and date of birth.
-		String update = "";
-		if(dob != null){
-		    update = 
-		            "UPDATE students SET firstname=?, lastname=?, date_of_birth=? WHERE email_hash=?";
-		    System.out.println("Member--> dob is null");
-		}
-		else {
-		    update = "UPDATE students SET firstname=?, lastname=? WHERE email_hash=?";
-		}
-		
-		if(fname == null){fname = "";}
-		if(lname == null){lname = "";}
-		System.out.println(TAG + "addName->fname: " + fname + " lname: " + lname);
-		System.out.println(TAG + "addName->secret: " + DatatypeConverter.printBase64Binary(dataKey.getEncoded()));
-
-		// encrypted first and last names
-		String cypherFirstName = encryptor.encryptWithKey(fname, dataKey);
-		String cypherLastName = encryptor.encryptWithKey(lname, dataKey);
-		
-		try{
-			conn = ds.getConnection();
-			stmt = conn.createStatement();
-			stmt.executeUpdate("USE teacher");
-			String insertQry = update;
-			ps = conn.prepareStatement(insertQry);
-			ps.setString(1, cypherFirstName);
-			ps.setString(2, cypherLastName);
-			// only set dob if present in parameters
-			if(dob != null){
-			    ps.setDate(3, myDate);
-			    ps.setString(4, email.toLowerCase());			    
-			}
-			else{
-                ps.setString(3, String.valueOf(email.toLowerCase().hashCode()));               			    
-			}
-			System.out.println("Member-->Updating name..." + ps.toString());
-
-			ps.executeUpdate();
-		}
-		catch(Exception ex){
-			ex.printStackTrace();
-		}
-		finally {
-			try {if (stmt != null) stmt.close();} catch (SQLException e) {}
-			try {if (ps != null) ps.close();} catch (SQLException e ) {}
-			try {if (conn != null) conn.close();} catch (SQLException e) {}
-		}		
-
-		Person p = this.verify(email, password);
-		System.out.println(TAG + "fname: " + p.getFirstName() + "; lname: " + p.getLastName());
-        return p;
-	}
-	
-	
-	/*
-	 * Recover data key from backup Key and set new password
-	 */
-	public int resetPassword(String email, String newPassword, String recovery){
+	public int resetPassword(String email, String recovery, String newPassword){
 	    int result = -1;
 	    String backupKeyString = "";
 	    
@@ -711,7 +578,7 @@ public class Member {
             stmt = conn.createStatement();
             stmt.executeUpdate("USE teacher");
             ps = conn.prepareStatement(select);
-            System.out.println("Member-->passwordStatement: " + ps.toString());
+            System.out.println("Member-->resetPwd: select backup: " + ps.toString());
 
             ResultSet rs = ps.executeQuery();
             while(rs.next()){
@@ -727,15 +594,23 @@ public class Member {
             try {if (conn != null) conn.close();} catch (SQLException e) {}
         }       
 	    
-	    // recover dataKey from backup
+	    // recover dataKey from backupKey
+        System.out.println(TAG + "resetPwd->recovery String: " + recovery.toUpperCase());
+        System.out.println(TAG + "resetPwd->backupKey: " + backupKeyString);
         SecretKey recoveryKey = encryptor.getKey(recovery.toUpperCase());
+        byte[] recoveryBytes = recoveryKey.getEncoded();
+        System.out.println(TAG + "resetPwd->recoveryKey: " + DatatypeConverter.printBase64Binary(recoveryBytes));
         byte[] backupBytes = DatatypeConverter.parseBase64Binary(backupKeyString);
-        byte[] dataKeyBytes = encryptor.xorWithKey(backupBytes, recoveryKey.getEncoded());
+        byte[] dataKeyBytes = encryptor.xorWithKey(backupBytes, recoveryBytes);
+        System.out.println(TAG + "resetPwd->dataKey: " + DatatypeConverter.printBase64Binary(dataKeyBytes));
         
 	    // get new storedKey from newPassword
         SecretKey newPasswordKey = encryptor.getKey(newPassword);
+        System.out.println(TAG + "resetPwd->newPwdKey: " + DatatypeConverter.printBase64Binary(newPasswordKey.getEncoded()));
         byte[] storedKeyBytes = encryptor.xorWithKey(dataKeyBytes, newPasswordKey.getEncoded());
         String storedKeyString = DatatypeConverter.printBase64Binary(storedKeyBytes);
+        System.out.println(TAG + "resetPwd->storedKey: " + DatatypeConverter.printBase64Binary(storedKeyBytes));
+        
         
         // get password hash to update password
         String hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
@@ -771,6 +646,104 @@ public class Member {
 	}
 	
 	
+    /*
+     *  Edit name and other details
+     */
+    public Person updateName(Person person){
+        Statement stmt = null;
+        PreparedStatement ps = null;
+        
+        // get user parameters
+        String email = person.getEmail();
+        String password = person.getPassword();
+        String dob = person.getDOB();
+        String fname = person.getFirstName();
+        String lname = person.getLastName();
+        
+        Date myDate = null;
+
+        String[] dateObjects;
+        if((dob != null) && (dob.length() > 0)){
+            dateObjects = dob.split("/");
+            if(dateObjects.length == 3){                
+                String dateFormatString = "MM/dd/yy";
+                SimpleDateFormat df = new SimpleDateFormat(dateFormatString);
+                try {
+                    myDate = (Date) df.parse(dob);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            }
+        } 
+
+        // get stored_key from database
+        String storedKeyString = getStoredKey(email);
+        SecretKey storedKey = encryptor.getKeyFromString(storedKeyString);
+        
+        // get passwordKey
+        SecretKey passwordKey = encryptor.getKey(password);
+        
+        // obtain dataKey from XOR of storedKey and passwordKey 
+        byte[] dataKeyBytes = encryptor.xorWithKey(storedKey.getEncoded(), passwordKey.getEncoded());
+        SecretKey dataKey = new SecretKeySpec(dataKeyBytes, 0, dataKeyBytes.length, "AES");
+        
+        //          MySQLのインサートクエリー
+        // Check if dob is null, and if so, only update name
+        // otherwise update name and date of birth.
+        String update = "";
+        if(dob != null){
+            update = 
+                    "UPDATE students SET firstname=?, lastname=?, date_of_birth=? WHERE email_hash=?";
+            System.out.println("Member--> dob is null");
+        }
+        else {
+            update = "UPDATE students SET firstname=?, lastname=? WHERE email_hash=?";
+        }
+        
+        if(fname == null){fname = "";}
+        if(lname == null){lname = "";}
+        System.out.println(TAG + "addName->fname: " + fname + " lname: " + lname);
+        System.out.println(TAG + "addName->secret: " + DatatypeConverter.printBase64Binary(dataKey.getEncoded()));
+
+        // encrypted first and last names
+        String cypherFirstName = encryptor.encryptWithKey(fname, dataKey);
+        String cypherLastName = encryptor.encryptWithKey(lname, dataKey);
+        
+        try{
+            conn = ds.getConnection();
+            stmt = conn.createStatement();
+            stmt.executeUpdate("USE teacher");
+            String insertQry = update;
+            ps = conn.prepareStatement(insertQry);
+            ps.setString(1, cypherFirstName);
+            ps.setString(2, cypherLastName);
+            // only set dob if present in parameters
+            if(dob != null){
+                ps.setDate(3, myDate);
+                ps.setString(4, email.toLowerCase());               
+            }
+            else{
+                ps.setString(3, String.valueOf(email.toLowerCase().hashCode()));                            
+            }
+            System.out.println("Member-->Updating name..." + ps.toString());
+
+            ps.executeUpdate();
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            try {if (stmt != null) stmt.close();} catch (SQLException e) {}
+            try {if (ps != null) ps.close();} catch (SQLException e ) {}
+            try {if (conn != null) conn.close();} catch (SQLException e) {}
+        }       
+
+        Person p = this.verify(email, password);
+        System.out.println(TAG + "fname: " + p.getFirstName() + "; lname: " + p.getLastName());
+        return p;
+    }
+    
+    
 	public Integer testCount(int id){
 //	   System.out.println("testCount called");	
 	   Integer tCount = null;
