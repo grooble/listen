@@ -17,7 +17,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.sql.DataSource;
 import javax.xml.bind.DatatypeConverter;
-
 import BCrypt.BCrypt;
 
 
@@ -62,7 +61,9 @@ public class Member {
 			stmt.executeUpdate("USE teacher");
 			ps = conn.prepareStatement(selectQry);
 			ps.setInt(1, id);
-			System.out.println("Member-->PreparedStatementB: " + ps.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println("Member-->PreparedStatementB: " + ps.toString());
+			}
 			
 			rs = ps.executeQuery();
 
@@ -123,7 +124,9 @@ public class Member {
             stmt.executeUpdate("USE teacher");
             ps = conn.prepareStatement(selectQry);
             ps.setString(1, hashedMail);
-            System.out.println("Member-->PreparedStatementD: " + ps.toString());
+            if(MyDebug.LOGINLOG){
+            	System.out.println("Member-->PreparedStatementD: " + ps.toString());
+            }
             rs = ps.executeQuery();
             
             if(rs.isBeforeFirst()){
@@ -138,7 +141,9 @@ public class Member {
             try {if (ps != null) ps.close();} catch (SQLException e ) {}
             try {if (conn != null) conn.close();} catch (SQLException e) {}
         }
-        System.out.println(TAG + "verify->found: " + found);
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "verify->found: " + found);
+        }
         return found;
     }
     
@@ -186,13 +191,17 @@ public class Member {
 			stmt.executeUpdate("USE teacher");
 			ps = conn.prepareStatement(selectQry);
 			ps.setString(1, hashedMail);
-			System.out.println(TAG + "verify->PStmt: " + ps.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println(TAG + "verify->PStmt: " + ps.toString());
+			}
 			rs = ps.executeQuery();
 			
 			
 			if(!rs.next()){
 				person = null;
-				System.out.println(TAG + "verify->PStmt: member not found");
+				if(MyDebug.LOGINLOG){
+					System.out.println(TAG + "verify->PStmt: member not found");
+				}
 			}
 			else {
 			    results = new ArrayList<Person>();
@@ -242,7 +251,9 @@ public class Member {
 		    // recover encryption key from XOR of password key and stored key
 		    byte[] recoveredKey = encryptor.xorWithKey(storedByteArray, passwordByteArray);
 		    SecretKey secret = new SecretKeySpec(recoveredKey, 0, recoveredKey.length, "AES");
-		    System.out.println(TAG + "verify secret: " + DatatypeConverter.printBase64Binary(secret.getEncoded()));
+		    if(MyDebug.LOGINLOG){
+		    	System.out.println(TAG + "verify secret: " + DatatypeConverter.printBase64Binary(secret.getEncoded()));
+		    }
 		    
 		    if (results.size() > 1){
 		        personToReturn = this.getDecryptedPerson(deCollide(results, mail, secret), secret);
@@ -251,8 +262,10 @@ public class Member {
 		        personToReturn = this.getDecryptedPerson(results.get(0), secret);	
 		    }
 		}
-		System.out.println(TAG + "verify->person->email, points: " + personToReturn.getEmail() + ", " + 
-		                   personToReturn.getPoints());
+		if(MyDebug.LOGINLOG){
+			System.out.println(TAG + "verify->person->email, points: " + personToReturn.getEmail() + ", " + 
+					personToReturn.getPoints());
+		}
 		
 		return personToReturn;
 	}
@@ -288,12 +301,16 @@ public class Member {
             stmt.executeUpdate("USE teacher");
             ps = conn.prepareStatement(selectQry);
             ps.setString(1, hashedMail);
-            System.out.println("Member-->PreparedStatement(lookup): " + ps.toString());
+            if(MyDebug.LOGINLOG){
+            	System.out.println("Member-->PreparedStatement(lookup): " + ps.toString());
+            }
             rs = ps.executeQuery();
             
             if(!rs.next()){
                 person = null;
-                System.out.println("Member-->PreparedStatement(lookup): member not found");
+                if(MyDebug.LOGINLOG){
+                	System.out.println("Member-->PreparedStatement(lookup): member not found");
+                }
             }
             else {
                 results = new ArrayList<Person>();
@@ -345,7 +362,9 @@ public class Member {
         String rand = randomString(24);
         SecretKey dataKey = encryptor.getKey(rand);
         byte[] dataKeyByteArray = dataKey.getEncoded();
-        System.out.println(TAG + "addMember dataKey: " + DatatypeConverter.printBase64Binary(dataKeyByteArray));
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "addMember dataKey: " + DatatypeConverter.printBase64Binary(dataKeyByteArray));
+        }
 
         // Obtain locking key. This will be XORed with surrogate key and stored
         SecretKey lockingKey = encryptor.getKey(password);
@@ -377,7 +396,9 @@ public class Member {
 			ps.setString(3, hashedPassword);
 			ps.setString(4, storedKeyString);
 
-			System.out.println("Member-->PreparedStatementE: " + ps.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println("Member-->PreparedStatementE: " + ps.toString());
+			}
 
 			ps.executeUpdate();
 		}
@@ -413,7 +434,9 @@ public class Member {
 			ps.setString(3, lastname);
 			ps.setString(4, fbid);
 			ps.setString(5, "http://graph.facebook.com/" + fbid + "/picture?type=large");
-			System.out.println("Member-->PreparedStatementF: " + ps.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println("Member-->PreparedStatementF: " + ps.toString());
+			}
 
 			ps.executeUpdate();
 		}
@@ -448,13 +471,17 @@ public class Member {
 			stmt2.executeUpdate("USE teacher");
 			ps2 = conn.prepareStatement(selectQry);
 			ps2.setString(1, fbid);
-			System.out.println("Member-->PreparedStatement-2G: " + ps2.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println("Member-->PreparedStatement-2G: " + ps2.toString());
+			}
 
 			rs = ps2.executeQuery();
 
 			if(!rs.next()){
 				person = null;
-				System.out.println("Member->addMember: set person to null");
+				if(MyDebug.LOGINLOG){
+					System.out.println("Member->addMember: set person to null");
+				}
 			}
 			else {
 				do {
@@ -498,7 +525,9 @@ public class Member {
             stmt = conn.createStatement();
             stmt.executeUpdate("USE teacher");
             ps = conn.prepareStatement(select);
-            System.out.println("Member-->storedSelect: " + ps.toString());
+            if(MyDebug.LOGINLOG){
+            	System.out.println("Member-->storedSelect: " + ps.toString());
+            }
 
             ResultSet rs = ps.executeQuery();
             while(rs.next()){
@@ -517,19 +546,29 @@ public class Member {
         // get data key from stored key with password key XOR
         SecretKey passwordKey = encryptor.getKey(password);
         byte[] passwordBytes = passwordKey.getEncoded();
-        System.out.println(TAG + "setBackup->passwordKey: " + DatatypeConverter.printBase64Binary(passwordBytes));
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "setBackup->passwordKey: " + DatatypeConverter.printBase64Binary(passwordBytes));
+        }
         byte[] storedBytes = DatatypeConverter.parseBase64Binary(storedKeyString);
         byte[] dataKeyBytes = encryptor.xorWithKey(storedBytes, passwordBytes);
-        System.out.println(TAG + "setBackup->dataKey: " + DatatypeConverter.printBase64Binary(dataKeyBytes));
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "setBackup->dataKey: " + DatatypeConverter.printBase64Binary(dataKeyBytes));
+        }
         
         // XOR data key with recovery to get backup key
-        System.out.println(TAG + "setBackup->recovery String: " + recovery.toUpperCase());
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "setBackup->recovery String: " + recovery.toUpperCase());
+        }
         SecretKey recoveryKey = encryptor.getKey(recovery.toUpperCase());
         byte[] recoveryBytes = recoveryKey.getEncoded();
-        System.out.println(TAG + "setBackup->recoveryKey: " + DatatypeConverter.printBase64Binary(recoveryBytes));
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "setBackup->recoveryKey: " + DatatypeConverter.printBase64Binary(recoveryBytes));
+        }
         byte[] backupKeyBytes = encryptor.xorWithKey(dataKeyBytes, recoveryKey.getEncoded());
         String backupKeyString = DatatypeConverter.printBase64Binary(backupKeyBytes);
-        System.out.println(TAG + "setBackup->backupKey: " + backupKeyString);
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "setBackup->backupKey: " + backupKeyString);
+        }
         
         
         // store backup key in database
@@ -544,7 +583,9 @@ public class Member {
             stmt2 = conn2.createStatement();
             stmt2.executeUpdate("USE teacher");
             ps2 = conn2.prepareStatement(update);
-            System.out.println("Member-->set backup: " + ps2.toString());
+            if(MyDebug.LOGINLOG){
+            	System.out.println("Member-->set backup: " + ps2.toString());
+            }
 
             // result will be 1 or 0 for success
             ps2.executeUpdate();
@@ -578,7 +619,9 @@ public class Member {
             stmt = conn.createStatement();
             stmt.executeUpdate("USE teacher");
             ps = conn.prepareStatement(select);
-            System.out.println("Member-->resetPwd: select backup: " + ps.toString());
+            if(MyDebug.LOGINLOG){
+            	System.out.println("Member-->resetPwd: select backup: " + ps.toString());
+            }
 
             ResultSet rs = ps.executeQuery();
             while(rs.next()){
@@ -595,21 +638,31 @@ public class Member {
         }       
 	    
 	    // recover dataKey from backupKey
-        System.out.println(TAG + "resetPwd->recovery String: " + recovery.toUpperCase());
-        System.out.println(TAG + "resetPwd->backupKey: " + backupKeyString);
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "resetPwd->recovery String: " + recovery.toUpperCase());
+        	System.out.println(TAG + "resetPwd->backupKey: " + backupKeyString);
+        }
         SecretKey recoveryKey = encryptor.getKey(recovery.toUpperCase());
         byte[] recoveryBytes = recoveryKey.getEncoded();
-        System.out.println(TAG + "resetPwd->recoveryKey: " + DatatypeConverter.printBase64Binary(recoveryBytes));
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "resetPwd->recoveryKey: " + DatatypeConverter.printBase64Binary(recoveryBytes));
+        }
         byte[] backupBytes = DatatypeConverter.parseBase64Binary(backupKeyString);
         byte[] dataKeyBytes = encryptor.xorWithKey(backupBytes, recoveryBytes);
-        System.out.println(TAG + "resetPwd->dataKey: " + DatatypeConverter.printBase64Binary(dataKeyBytes));
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "resetPwd->dataKey: " + DatatypeConverter.printBase64Binary(dataKeyBytes));
+        }
         
 	    // get new storedKey from newPassword
         SecretKey newPasswordKey = encryptor.getKey(newPassword);
-        System.out.println(TAG + "resetPwd->newPwdKey: " + DatatypeConverter.printBase64Binary(newPasswordKey.getEncoded()));
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "resetPwd->newPwdKey: " + DatatypeConverter.printBase64Binary(newPasswordKey.getEncoded()));
+        }
         byte[] storedKeyBytes = encryptor.xorWithKey(dataKeyBytes, newPasswordKey.getEncoded());
         String storedKeyString = DatatypeConverter.printBase64Binary(storedKeyBytes);
-        System.out.println(TAG + "resetPwd->storedKey: " + DatatypeConverter.printBase64Binary(storedKeyBytes));
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "resetPwd->storedKey: " + DatatypeConverter.printBase64Binary(storedKeyBytes));
+        }
         
         
         // get password hash to update password
@@ -628,7 +681,9 @@ public class Member {
             stmt2 = conn2.createStatement();
             stmt2.executeUpdate("USE teacher");
             ps2 = conn2.prepareStatement(update);
-            System.out.println("Member-->reset pwd->update: " + ps2.toString());
+            if(MyDebug.LOGINLOG){
+            	System.out.println("Member-->reset pwd->update: " + ps2.toString());
+            }
 
             // result will be 1 or 0 for success
             result = ps2.executeUpdate();
@@ -694,7 +749,9 @@ public class Member {
         if(dob != null){
             update = 
                     "UPDATE students SET firstname=?, lastname=?, date_of_birth=? WHERE email_hash=?";
-            System.out.println("Member--> dob is null");
+            if(MyDebug.LOGINLOG){
+            	System.out.println("Member--> dob is null");
+            }
         }
         else {
             update = "UPDATE students SET firstname=?, lastname=? WHERE email_hash=?";
@@ -702,8 +759,10 @@ public class Member {
         
         if(fname == null){fname = "";}
         if(lname == null){lname = "";}
-        System.out.println(TAG + "addName->fname: " + fname + " lname: " + lname);
-        System.out.println(TAG + "addName->secret: " + DatatypeConverter.printBase64Binary(dataKey.getEncoded()));
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "addName->fname: " + fname + " lname: " + lname);
+        	System.out.println(TAG + "addName->secret: " + DatatypeConverter.printBase64Binary(dataKey.getEncoded()));
+        }
 
         // encrypted first and last names
         String cypherFirstName = encryptor.encryptWithKey(fname, dataKey);
@@ -725,7 +784,9 @@ public class Member {
             else{
                 ps.setString(3, String.valueOf(email.toLowerCase().hashCode()));                            
             }
-            System.out.println("Member-->Updating name..." + ps.toString());
+            if(MyDebug.LOGINLOG){
+            	System.out.println("Member-->Updating name..." + ps.toString());
+            }
 
             ps.executeUpdate();
         }
@@ -739,13 +800,14 @@ public class Member {
         }       
 
         Person p = this.verify(email, password);
-        System.out.println(TAG + "fname: " + p.getFirstName() + "; lname: " + p.getLastName());
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "fname: " + p.getFirstName() + "; lname: " + p.getLastName());
+        }
         return p;
     }
     
     
 	public Integer testCount(int id){
-//	   System.out.println("testCount called");	
 	   Integer tCount = null;
 	   Statement stmt = null;
 	   PreparedStatement ps = null;
@@ -759,7 +821,9 @@ public class Member {
 		   stmt= conn.createStatement();
 		   ps = conn.prepareStatement(selectQry);
 		   ps.setInt(1, id);
-		   System.out.println("Member-->PreparedStatementJ: " + ps.toString());
+		   if(MyDebug.LOGINLOG){
+			   System.out.println("Member-->PreparedStatementJ: " + ps.toString());
+		   }
 
 		   stmt.executeUpdate("USE teacher");
 		   rs = ps.executeQuery();
@@ -808,7 +872,9 @@ public class Member {
 			ps.setString(2, password);
 			ps.setString(3, code);
 			ps.setString(4, confPass);
-			System.out.println("Member-->PreparedStatementK: " + ps.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println("Member-->PreparedStatementK: " + ps.toString());
+			}
 
 			ps.executeUpdate();
 		}
@@ -837,7 +903,9 @@ public class Member {
 			stmt.executeUpdate("USE teacher");
 			ps = conn.prepareStatement(selectQry);
 			ps.setString(1, code);
-			System.out.println("Member-->PreparedStatementL: " + ps.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println("Member-->PreparedStatementL: " + ps.toString());
+			}
 
 			ps.executeUpdate();
 
@@ -871,7 +939,9 @@ public class Member {
 			ps = conn.prepareStatement(selectQry);
 			ps.setString(1, code);
 			ps.setString(2, confPass);
-			System.out.println("Member-->PreparedStatementM: " + ps.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println("Member-->PreparedStatementM: " + ps.toString());
+			}
 
 			rs = ps.executeQuery();
 
@@ -923,7 +993,9 @@ public class Member {
 			ps.setString(1, emailHash);
 			ps.setString(2, code);
 			ps.setString(3, confPass);
-			System.out.println("Member-->PreparedStatementN: " + ps.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println("Member-->PreparedStatementN: " + ps.toString());
+			}
 
 			ps.executeUpdate();
 		}
@@ -955,7 +1027,9 @@ public class Member {
 			stmt.executeUpdate("USE teacher");
 			ps = conn.prepareStatement(selectQry);
 			ps.setString(1, emailHash);
-			System.out.println("Member-->PreparedStatementO: " + ps.toString());
+			if(MyDebug.LOGINLOG){
+				System.out.println("Member-->PreparedStatementO: " + ps.toString());
+			}
 
 			ps.executeUpdate();
 

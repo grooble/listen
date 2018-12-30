@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project-modules id="moduleCoreId" project-version="1.5.0">
-    <wb-module deploy-name="ListenB">
+<?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
+    <wb-module deploy-name="Listen">
         <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
-        <property name="context-root" value="ListenB"/>
-        <property name="java-output-path" value="/ListenB/build/classes"/>
+        <property name="java-output-path" value="/Listen/build/classes"/>
+        <property name="context-root" value="Listen"/>
     </wb-module>
 </project-modules>

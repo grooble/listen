@@ -61,7 +61,10 @@ public class PwdEntry extends HttpServlet {
 			}
 		}
 		System.out.println("PwdEntry-->user loaded and about to reset pwd.");
-		user = m.updatePwd(user.getEmail(), password1);
+		int success = m.resetPassword(user.getEmail(), "recovery", password1);
+		//TODO resetPassword is the new password recovery method.
+		// need to implement secure password recovery for the webapp
+		// the above "recovery" needs to be implemented in the form field.
 		m.deleteRecovery(user.getEmail());
 		session.setAttribute("user", user);
 		request.setAttribute("message", "パスワード更新しました。"); 

@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +55,9 @@ public class Update {
 			"INSERT INTO activities " +
 			"(user, act_type, act_value, parent)" +
 			"VALUES( ?, ?, ?, ?)";
-		System.out.println("Update-->insertQuery: " + insertQuery);
+		if(MyDebug.LOGINLOG){
+			System.out.println("Update-->insertQuery: " + insertQuery);
+		}
 		try{
 			conn = ds.getConnection();
 			ps = conn.prepareStatement(insertQuery);
@@ -95,7 +96,9 @@ public class Update {
             stmt = conn.createStatement();
             ps.setString(1, token);
             ps.setInt(2, userId);
-            System.out.println(TAG + "Insert: " + ps.toString());
+            if(MyDebug.LOGINLOG){
+            	System.out.println(TAG + "Insert: " + ps.toString());
+            }
 
             stmt.executeUpdate("USE teacher");
             ps.executeUpdate();

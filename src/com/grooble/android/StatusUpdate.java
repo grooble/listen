@@ -18,6 +18,7 @@ import org.json.JSONObject;
 
 import com.grooble.model.JSONMaker;
 import com.grooble.model.Member;
+import com.grooble.model.MyDebug;
 import com.grooble.model.Person;
 import com.grooble.model.Result;
 import com.grooble.model.Status;
@@ -56,7 +57,9 @@ public class StatusUpdate extends HttpServlet {
         
         response.setContentType("text/html");
         response.setCharacterEncoding(encoding);
-        System.out.println(TAG + "-->encoding: " + encoding);
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "-->encoding: " + encoding);
+        }
         
         String email = request.getParameter("email");
         String password = request.getParameter("password");
@@ -76,7 +79,9 @@ public class StatusUpdate extends HttpServlet {
         // Parse strings into Integers
         if((flagString != null) && (!flagString.isEmpty())){
             retrieve = Boolean.parseBoolean(flagString);
-            System.out.println("StatusUpdate... setting retrieve flag: " + retrieve);
+            if(MyDebug.LOGINLOG){
+            	System.out.println("StatusUpdate... setting retrieve flag: " + retrieve);
+            }
         }
         
         if ((parentString != null) && (!parentString.isEmpty())){
@@ -91,14 +96,16 @@ public class StatusUpdate extends HttpServlet {
             size = Integer.parseInt(sizeString);
         }
 
-        System.out.println(TAG + "-->"
-                + "email: "  + email + ", " 
-                + "status: " + statusComment + ", " 
-                + "type: "   + statusType + ", " 
-                + "parent: " + parent + ", "
-                + "retrv: "  + retrieve + ", "
-                + "start: "  + start + ", "
-                + "size: "   + size);
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "-->"
+        			+ "email: "  + email + ", " 
+        			+ "status: " + statusComment + ", " 
+        			+ "type: "   + statusType + ", " 
+        			+ "parent: " + parent + ", "
+        			+ "retrv: "  + retrieve + ", "
+        			+ "start: "  + start + ", "
+        			+ "size: "   + size);
+        }
         
         Member memberTools = new Member(ds);
         Person user = (Person) memberTools.verify(email, password);
@@ -111,7 +118,9 @@ public class StatusUpdate extends HttpServlet {
         }
         else{
             UserBuilderT builder = new UserBuilderT(user, password, ds);
-            System.out.println(TAG + "-->user email: " + user.getEmail());
+            if(MyDebug.LOGINLOG){
+            	System.out.println(TAG + "-->user email: " + user.getEmail());
+            }
             
             // check for empty status and if not empty
             // create Status and call setStatus in Update.java
@@ -124,7 +133,9 @@ public class StatusUpdate extends HttpServlet {
                 else{ // otherwise include type in the constructor
                     status = new Status(
                             user.getId(), statusType, statusComment, parent); 
-                    System.out.println("StatusUpdate... Status: " + status.getContent());
+                    if(MyDebug.LOGINLOG){
+                    	System.out.println("StatusUpdate... Status: " + status.getContent());
+                    }
                 }
                 up.setStatus(ds, status);
             }

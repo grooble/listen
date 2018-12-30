@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.grooble.model.Member;
+import com.grooble.model.MyDebug;
 import com.grooble.model.Person;
 //import com.grooble.android.Encrypter;
 
@@ -24,6 +25,9 @@ import com.grooble.model.Person;
 *   email:the email submitted by the app.
 *   password: the hashed password
 *   email="error" for unsuccessful join attempt
+*   
+*   When user has been successfully added, 
+*   a PUT request is sent to MailChimp to add user to DB.
 */
 
 @SuppressWarnings("serial")
@@ -56,7 +60,9 @@ public class Join extends HttpServlet{
         String mail = request.getParameter("email").toLowerCase();
         String password = request.getParameter("password");
         
-        System.out.println(TAG + "email: " + mail + ", pwd: " + password);
+        if(MyDebug.LOGINLOG){
+        	System.out.println(TAG + "email: " + mail + ", pwd: " + password);
+        }
                 
         //exit if email and password paramaters are not found
         if((mail != null && mail.length()>0) && (password != null && password.length() > 0)) {
@@ -75,7 +81,9 @@ public class Join extends HttpServlet{
             }
             else {         
                 // Add new member
-                System.out.println(TAG + "adding member: email: " + mail + "; password: " + password);
+            	if(MyDebug.LOGINLOG){
+            		System.out.println(TAG + "adding member: email: " + mail + "; password: " + password);
+            	}
                 m.addMember(mail, password);
                 
                 // Check success of Join action. Verify and get current joined user.
@@ -90,18 +98,25 @@ public class Join extends HttpServlet{
                 else{
                     // ...otherwise, user verified and ready to return
                     // user decrypted in Member
-                    System.out.println(TAG + "checkedUser: "+ checkedUser.getEmail());
+                	if(MyDebug.LOGINLOG){
+                		System.out.println(TAG + "checkedUser: "+ checkedUser.getEmail());
+                	}
                     JSONUser = checkedUser.getJSONObject();
                     try{            
                         JSONContainer.put("user", JSONUser);
                     }catch (JSONException e){
                         e.printStackTrace();
-                    }                    
+                    }
+                    // Send PUT request to MailChimp database
+                    DoPost dp = new DoPost(mail);
+                   	dp.doPostAction();
                 }
             }
         }
 
-        System.out.println("Join->writing response");
+        if(MyDebug.LOGINLOG){
+        	System.out.println("Join->writing response");
+        }
         PrintWriter out = response.getWriter();
         response.setContentType("text/html");
         out.write(JSONContainer.toString());

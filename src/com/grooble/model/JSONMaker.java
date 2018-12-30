@@ -125,6 +125,11 @@ public class JSONMaker {
 	    return JSONtoreturn;
 	}
 	
+
+	/**
+	 * Takes Person object and returns corresponding JSONArray
+	 * of Person attributes
+	 */
 	public JSONArray toJSON(Person person){
 		JSONArray personJSON = new JSONArray();
 		personJSON.put(person.getId());
@@ -137,6 +142,10 @@ public class JSONMaker {
 		return personJSON;
 	}
 	
+
+	/**
+	 * Takes List of Questions and returns JSONObject
+	 */
 	public JSONObject allQuestionJSON(List<Question> questions){
 	    JSONObject allQuestions = new JSONObject();
 	    JSONArray questionArray = new JSONArray();
@@ -188,6 +197,7 @@ public class JSONMaker {
 	    return allQuestions;
 	}
 	
+	
 	// Convenience method to convert an ArrayList of Person to JSONObject
 	// The "pack" object contains a labeled JSONArray eg. friends, pending  
 	public JSONArray toJSON(List<?> aList, String label){
@@ -205,4 +215,19 @@ public class JSONMaker {
 	    return jArray;
 	}
 	
+	
+	/**
+	 * Convert email parameters to JSONObject for sending to MailChimp server
+	 */
+	public JSONObject toJSONParams(String email) {
+		JSONObject job = new JSONObject();
+		String status = "subscribed";
+		try {
+			job.put("email_address", email);
+			job.put("status", status);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return job;
+	}
 }	
